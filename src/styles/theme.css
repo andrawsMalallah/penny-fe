@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  font-synthesis: none;
+  --page: #fbf9f5;
+  --card: #fff;
+  --secondary: #efeeea;
+  --ink: #1b1c1a;
+  --muted: #3f4943;
+  --line: #bec9c1;
+  --accent: #00563c;
+  --action: #0e7051;
+  --on-action: #fff;
+  --error: #ba1a1a;
+  --error-bg: #ffdad6;
+  --iqd-bg: #fbdebb;
+  --iqd-ink: #57432a;
+  --usd-bg: #dbe1ff;
+  --usd-ink: #003ea8;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #171716;
+  --card: #222220;
+  --secondary: #2b2a27;
+  --ink: #f1eee8;
+  --muted: #b5b0a6;
+  --line: #3b3a36;
+  --accent: #50dea9;
+  --action: #12b886;
+  --on-action: #00412d;
+  --error: #ffb4ab;
+  --error-bg: #93000a;
+  --iqd-bg: rgb(251 191 36 / 12%);
+  --iqd-ink: #fbbf24;
+  --usd-bg: rgb(45 212 191 / 12%);
+  --usd-ink: #2dd4bf;
+}
+:root[lang='ar'] {
+  font-family: 'Noto Sans Arabic', Cairo, 'Segoe UI', sans-serif;
+  line-height: 1.9;
+}

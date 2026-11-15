@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">Penny</title>
+  <desc id="logo-description">A white ribbon P with an open circular bowl and folded lower sweep on a muted forest-green rounded square.</desc>
+  <defs>
+    <linearGradient id="green" x1="48" y1="0" x2="464" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E7051"/>
+      <stop offset="1" stop-color="#0E7051"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="176" y1="276" x2="206" y2="338" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F2F5F2"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="72" fill="url(#green)"/>
+
+  <!-- The stem and upper arc form one continuous silhouette. -->
+  <path fill="#FFFFFF" d="M128 444V216C128 146 185 88 256 88C324 88 379 141 384 209H335C331 167 299 139 259 139C216 139 179 173 179 216V393C179 421 156 444 128 444Z"/>
+
+  <!-- A narrow right-hand break and overlapping tail give the P its ribbon fold. -->
+  <path fill="url(#ribbon)" stroke="#0E7051" stroke-width="1.5" stroke-linejoin="round" d="M335 224H384C379 296 324 354 253 354C210 354 173 332 138 311C128 305 127 299 135 291C144 282 158 272 171 265C179 261 184 263 191 267C211 280 231 299 257 299C296 299 328 267 335 224Z"/>
+</svg>
