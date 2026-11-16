@@ -16,6 +16,17 @@ afterEach(() => {
 })
 
 describe('shared authentication feedback', () => {
+  it('uses security-specific code and rate-limit messages and translates reactively', async () => {
+    const feedback = useAuthFeedback(ref(null))
+    await feedback.showError(new ApiError(400, { otp: ['Invalid'] }), 'factor')
+    expect(feedback.error.value).toBe(copy.value.factorInvalid)
+    language.value = 'ar'
+    expect(feedback.error.value).toBe(copy.value.factorInvalid)
+    await feedback.showError(new ApiError(429, {}), 'factor')
+    expect(feedback.error.value).toBe(copy.value.factorRateLimit)
+    await feedback.showError(new ApiError(503, {}), 'factor')
+    expect(feedback.error.value).toBe(copy.value.factorUnavailable)
+  })
   it('uses session-specific availability feedback in both languages', async () => {
     const feedback = useAuthFeedback(ref(null))
     await feedback.showError(new ApiError(503, {}), 'sessions')

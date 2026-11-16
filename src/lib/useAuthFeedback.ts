@@ -14,7 +14,11 @@ type AuthErrorKey =
   | 'invalidCode'
   | 'validation'
   | 'connection'
-type ErrorContext = 'login' | 'code' | 'form' | 'sessions'
+  | 'factorInvalid'
+  | 'factorRateLimit'
+  | 'factorUnavailable'
+  | 'factorExpired'
+type ErrorContext = 'login' | 'code' | 'form' | 'sessions' | 'factor'
 
 export function useAuthFeedback(errorSummary: Ref<HTMLElement | null>) {
   const errorKey = ref<AuthErrorKey | ''>('')
@@ -44,13 +48,28 @@ export function useAuthFeedback(errorSummary: Ref<HTMLElement | null>) {
     fieldErrors.value = cause instanceof ApiError ? cause.fields : {}
     if (!(cause instanceof ApiError)) errorKey.value = 'connection'
     else if (cause.status === 429)
-      errorKey.value = context === 'login' ? 'loginRateLimit' : 'rateLimit'
+      errorKey.value =
+        context === 'factor'
+          ? 'factorRateLimit'
+          : context === 'login'
+            ? 'loginRateLimit'
+            : 'rateLimit'
     else if (cause.status === 401) errorKey.value = 'invalidCredentials'
     else if (cause.status === 503)
-      errorKey.value = context === 'sessions' ? 'sessionsUnavailable' : 'unavailable'
+      errorKey.value =
+        context === 'factor'
+          ? 'factorUnavailable'
+          : context === 'sessions'
+            ? 'sessionsUnavailable'
+            : 'unavailable'
     else if (cause.status === 403) errorKey.value = 'sessionError'
     else if (cause.status === 400)
-      errorKey.value = context === 'code' || cause.fields.code ? 'invalidCode' : 'validation'
+      errorKey.value =
+        context === 'factor' && cause.fields.otp
+          ? 'factorInvalid'
+          : context === 'code' || cause.fields.code
+            ? 'invalidCode'
+            : 'validation'
     else errorKey.value = 'connection'
     await focusError()
   }

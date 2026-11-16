@@ -1,6 +1,57 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('browser API contract', () => {
+  it('returns a second-factor challenge without treating it as a profile and refreshes CSRF', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'before-password' })))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ two_factor_required: true }), { status: 202 }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'before-factor' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'authenticated' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signIn, verifySecondFactor, apiRequest } = await import('./api')
+    expect(await signIn('test@example.com', 'Private test phrase 389!')).toEqual({
+      two_factor_required: true,
+    })
+    expect(await verifySecondFactor('123456', false)).toEqual({ id: 1 })
+    await apiRequest('auth/logout/', {})
+    expect(fetchMock.mock.calls[3]?.[1].headers['X-CSRFToken']).toBe('before-factor')
+    expect(fetchMock.mock.calls[5]?.[1].headers['X-CSRFToken']).toBe('authenticated')
+  })
+
+  it('refreshes CSRF after a 2FA settings change renews the current session', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'before-change' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'after-change' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { factorMutation, apiRequest } = await import('./api')
+    await factorMutation('disable', { otp: '123456', password: 'test fixture' })
+    await apiRequest('auth/logout/', {})
+    expect(fetchMock.mock.calls[3]?.[1].headers['X-CSRFToken']).toBe('after-change')
+  })
+
+  it('preserves structured factor errors without repeating a failed verification', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'token' })))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ otp: ['Invalid code'] }), { status: 400 }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    const { verifySecondFactor } = await import('./api')
+    await expect(verifySecondFactor('123456', false)).rejects.toMatchObject({
+      status: 400,
+      fields: { otp: ['Invalid code'] },
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
   beforeEach(() => vi.resetModules())
   afterEach(() => vi.unstubAllGlobals())
 

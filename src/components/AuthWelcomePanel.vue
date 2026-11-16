@@ -4,7 +4,7 @@ import { copy } from '../lib/copy'
 import PrimaryButton from './PrimaryButton.vue'
 
 defineProps<{ user: User | null; busy: boolean }>()
-defineEmits<{ logout: []; sessions: [] }>()
+defineEmits<{ logout: []; sessions: []; security: [] }>()
 </script>
 
 <template>
@@ -16,6 +16,14 @@ defineEmits<{ logout: []; sessions: [] }>()
       </div>
     </div>
     <p>{{ copy.foundationNote }}</p>
+    <button
+      class="text-button welcome-sessions"
+      type="button"
+      :disabled="busy"
+      @click="$emit('security')"
+    >
+      {{ copy.factorTitle }}
+    </button>
     <button
       class="text-button welcome-sessions"
       type="button"

@@ -11,7 +11,10 @@ import AuthWelcomePanel from './AuthWelcomePanel.vue'
 
 const PasswordResetFlow = defineAsyncComponent(() => import('./PasswordResetFlow.vue'))
 const SessionPanel = defineAsyncComponent(() => import('./SessionPanel.vue'))
-type AuthStage = 'login' | 'register' | 'verify' | 'welcome' | 'reset' | 'sessions'
+const SecondFactorForm = defineAsyncComponent(() => import('./SecondFactorForm.vue'))
+const TwoFactorPanel = defineAsyncComponent(() => import('./TwoFactorPanel.vue'))
+type AuthStage =
+  'login' | 'register' | 'verify' | 'welcome' | 'reset' | 'sessions' | 'factor' | 'security'
 const stage = ref<AuthStage>('login')
 const loading = ref(true)
 const busy = ref(false)
@@ -34,6 +37,8 @@ const title = computed(
       welcome: copy.value.successTitle,
       reset: copy.value.resetTitle,
       sessions: copy.value.sessionsTitle,
+      factor: copy.value.factorLoginTitle,
+      security: copy.value.factorTitle,
     })[stage.value],
 )
 
@@ -86,13 +91,23 @@ async function submitCredentials(): Promise<void> {
       rememberEmail(email.value.trim())
       await changeStage('verify')
     } else {
-      user.value = await signIn(email.value.trim(), password.value)
+      const result = await signIn(email.value.trim(), password.value)
       password.value = ''
       rememberEmail('')
-      language.value = user.value.language
-      await changeStage('welcome')
+      if ('two_factor_required' in result) {
+        user.value = null
+        await changeStage('factor')
+      } else {
+        await authenticated(result)
+      }
     }
   })
+}
+
+async function authenticated(value: User): Promise<void> {
+  user.value = value
+  language.value = value.language
+  await changeStage('welcome')
 }
 
 async function switchCredentials(): Promise<void> {
@@ -156,6 +171,17 @@ onMounted(async () => {
     language.value = user.value.language
   } catch (cause) {
     if (!(cause instanceof ApiError && cause.status === 403)) errorKey.value = 'connection'
+    else {
+      try {
+        const pending = await apiRequest<{ pending: boolean }>('auth/2fa/login/')
+        if (pending.pending) {
+          stage.value = 'factor'
+          return
+        }
+      } catch {
+        errorKey.value = 'connection'
+      }
+    }
     try {
       const pendingEmail = sessionStorage.getItem('penny.pending-email')
       if (pendingEmail) {
@@ -176,6 +202,16 @@ onMounted(async () => {
     <p v-if="loading" id="form-title" role="status">{{ copy.loading }}</p>
     <template v-else>
       <PasswordResetFlow v-if="stage === 'reset'" @back="changeStage('login')" />
+      <SecondFactorForm
+        v-else-if="stage === 'factor'"
+        @authenticated="authenticated"
+        @back="changeStage('login')"
+      />
+      <TwoFactorPanel
+        v-else-if="stage === 'security'"
+        @back="changeStage('welcome')"
+        @expired="finishSession(false)"
+      />
       <SessionPanel
         v-else-if="stage === 'sessions'"
         @back="changeStage('welcome')"
@@ -224,6 +260,7 @@ onMounted(async () => {
           :busy="busy"
           @logout="signOut"
           @sessions="changeStage('sessions')"
+          @security="changeStage('security')"
         />
       </template>
       <p class="privacy-note">{{ copy.privacyNote }}</p>

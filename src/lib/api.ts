@@ -7,6 +7,22 @@ export interface User {
   timezone: string
 }
 
+export type LoginResult = User | { two_factor_required: true }
+
+export interface FactorStatus {
+  enabled: boolean
+  recovery_remaining: number
+}
+
+export interface FactorSetup {
+  secret: string
+  qr_code: string
+}
+
+export interface RecoveryCodes {
+  recovery_codes: string[]
+}
+
 export interface SignedInSession {
   browser: string
   device: string
@@ -56,7 +72,15 @@ function safeFields(payload: unknown): Record<string, string[]> {
   if (!payload || typeof payload !== 'object') return {}
   const fields: Record<string, string[]> = {}
   // Only structured validation fields are surfaced. Raw server responses never reach the UI.
-  for (const field of ['email', 'display_name', 'password', 'code', 'timezone', 'language']) {
+  for (const field of [
+    'email',
+    'display_name',
+    'password',
+    'code',
+    'otp',
+    'timezone',
+    'language',
+  ]) {
     const messages = (payload as Record<string, unknown>)[field]
     if (Array.isArray(messages) && messages.every((message) => typeof message === 'string')) {
       fields[field] = messages
@@ -96,10 +120,25 @@ export async function verifyEmail(code: string): Promise<User> {
   return user
 }
 
-export async function signIn(email: string, password: string): Promise<User> {
-  const user = await apiRequest<User>('auth/login/', { email, password })
+export async function signIn(email: string, password: string): Promise<LoginResult> {
+  const user = await apiRequest<LoginResult>('auth/login/', { email, password })
   csrfToken = ''
   return user
+}
+
+export async function verifySecondFactor(otp: string, recovery: boolean): Promise<User> {
+  const user = await apiRequest<User>('auth/2fa/login/', { otp, recovery })
+  csrfToken = ''
+  return user
+}
+
+export async function factorMutation<T>(
+  path: 'enable' | 'disable' | 'recovery-codes',
+  body: unknown,
+): Promise<T> {
+  const result = await apiRequest<T>(`auth/2fa/${path}/`, body)
+  csrfToken = ''
+  return result
 }
 
 export async function resetPassword(password: string): Promise<void> {
