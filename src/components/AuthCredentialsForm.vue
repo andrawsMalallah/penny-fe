@@ -56,15 +56,18 @@ const password = defineModel<string>('password', { required: true })
       registering ? (busy ? copy.creating : copy.create) : busy ? copy.signingIn : copy.signIn
     }}</PrimaryButton>
     <p v-if="registering" class="form-note">{{ copy.emailNote }}</p>
-    <div v-else class="auth-switch">
+    <div v-else class="auth-links-row">
       <button class="text-button" type="button" :disabled="busy" @click="$emit('reset')">
         {{ copy.forgotPassword }}
       </button>
-    </div>
-    <div class="auth-switch">
-      <span>{{ registering ? copy.haveAccount : copy.needAccount }}</span>
       <button class="text-button" type="button" :disabled="busy" @click="$emit('switch')">
-        {{ registering ? copy.signIn : copy.create }}
+        {{ copy.create }}
+      </button>
+    </div>
+    <div v-if="registering" class="auth-switch">
+      <span>{{ copy.haveAccount }}</span>
+      <button class="text-button" type="button" :disabled="busy" @click="$emit('switch')">
+        {{ copy.signIn }}
       </button>
     </div>
   </form>

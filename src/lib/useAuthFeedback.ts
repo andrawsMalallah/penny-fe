@@ -18,7 +18,8 @@ type AuthErrorKey =
   | 'factorRateLimit'
   | 'factorUnavailable'
   | 'factorExpired'
-type ErrorContext = 'login' | 'code' | 'form' | 'sessions' | 'factor'
+  | 'settingsUnavailable'
+type ErrorContext = 'login' | 'code' | 'form' | 'sessions' | 'factor' | 'settings'
 
 export function useAuthFeedback(errorSummary: Ref<HTMLElement | null>) {
   const errorKey = ref<AuthErrorKey | ''>('')
@@ -61,7 +62,9 @@ export function useAuthFeedback(errorSummary: Ref<HTMLElement | null>) {
           ? 'factorUnavailable'
           : context === 'sessions'
             ? 'sessionsUnavailable'
-            : 'unavailable'
+            : context === 'settings'
+              ? 'settingsUnavailable'
+              : 'unavailable'
     else if (cause.status === 403) errorKey.value = 'sessionError'
     else if (cause.status === 400)
       errorKey.value =

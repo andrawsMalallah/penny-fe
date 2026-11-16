@@ -3,10 +3,103 @@
 }
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--page);
   color: var(--ink);
   font-size: 15px;
   line-height: 1.6;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.control-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.secondary-button:hover:not(:disabled) {
+  background: var(--secondary);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.back-button {
+  margin-bottom: 28px;
+}
+.back-button .control-icon {
+  width: 17px;
+  height: 17px;
+}
+:root[dir='rtl'] .back-button .control-icon {
+  transform: rotate(180deg);
+}
+.refresh-button {
+  margin-bottom: 8px;
+}
+.refresh-button .control-icon {
+  width: 17px;
+  height: 17px;
+}
+.refresh-icon-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 10px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+.refresh-icon-button .control-icon {
+  width: 20px;
+  height: 20px;
+}
+.session-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.form-heading .session-title-row h2 {
+  min-width: 0;
+  margin-bottom: 0;
+}
+.session-title-row .refresh-button {
+  flex-shrink: 0;
+}
+.form-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 26px;
+}
+.form-actions .primary-button {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  margin-top: 0;
+}
+.form-actions .secondary-button {
+  min-width: 110px;
+  min-height: 52px;
 }
 button,
 input,
@@ -27,6 +120,10 @@ select:focus-visible,
 [tabindex='-1']:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 4px;
+}
+/* Page headings receive focus for announcements, but are not interactive controls. */
+:is(h1, h2, h3)[tabindex='-1']:focus {
+  outline: none;
 }
 .sr-only {
   position: absolute;
@@ -67,51 +164,278 @@ select:focus-visible,
   font-size: 23px;
   font-weight: 700;
   text-decoration: none;
+  flex-shrink: 0;
 }
 .brand img {
   border-radius: 9px;
 }
-.header-controls {
+.user-dropdown {
   margin-inline-start: auto;
+  position: relative;
+  min-width: 0;
+  max-width: min(62%, 320px);
+}
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 5px;
+  color: var(--ink);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-weight: 600;
+  font-size: 14px;
+}
+.user-menu-trigger:hover .user-avatar,
+.user-menu-trigger[aria-expanded='true'] .user-avatar {
+  border-color: var(--accent);
+}
+.user-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--secondary);
+  color: var(--accent);
+  font-size: 14px;
+}
+.user-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  z-index: 3;
+  width: 216px;
+  padding: 7px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px #00000018;
+}
+.user-menu a,
+.user-menu button {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-.language-button,
-.appearance-control select {
+  width: 100%;
   min-height: 48px;
-  padding: 8px 12px;
+  padding: 12px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
   color: var(--ink);
+  text-align: start;
+  text-decoration: none;
+  font-size: 14px;
+}
+.user-menu .control-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+}
+.user-menu a:hover,
+.user-menu button:hover {
+  background: var(--secondary);
+}
+.user-menu-divider {
+  height: 1px;
+  margin: 6px 8px;
+  background: var(--line);
+}
+.user-menu .user-menu-logout,
+.user-menu .user-menu-logout .control-icon {
+  color: var(--error);
+}
+.user-menu .user-menu-logout:hover {
+  background: color-mix(in srgb, var(--error) 8%, var(--card));
+}
+.app-error {
+  grid-column: 1 / -1;
+}
+.settings-layout {
+  max-width: 900px;
+  width: 100%;
+  flex: 1;
+  margin: 0 auto;
+  padding: 32px 48px max(48px, env(safe-area-inset-bottom));
+}
+.settings-page {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.settings-heading {
+  margin: 0 0 36px;
+}
+.settings-heading h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.settings-heading p,
+.settings-section-heading p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+.settings-section {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+}
+.settings-section-heading h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+.settings-section-heading p {
+  font-size: 13px;
+  max-width: 65ch;
+}
+.preference-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.preference-controls .form-field {
+  margin: 12px 0;
+}
+.select-control {
+  position: relative;
+  min-width: 0;
+}
+.select-control select {
+  display: block;
+  appearance: none;
+  width: 100%;
+  min-height: 52px;
+  padding-block: 12px;
+  padding-inline: 15px 48px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--page);
-}
-.appearance-control {
-  position: relative;
-  display: inline-flex;
   color: var(--ink);
+  background: var(--card);
+  font-size: 16px;
+  text-align: start;
 }
-.appearance-control::after {
-  content: '';
+.select-control select:enabled:hover {
+  border-color: var(--accent);
+}
+.select-control select[aria-invalid='true'] {
+  border-color: var(--error);
+}
+.select-chevron {
   position: absolute;
-  inset-inline-end: 14px;
   top: 50%;
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: translateY(-70%) rotate(45deg);
+  transform: translateY(-50%);
   pointer-events: none;
+  color: var(--muted);
+  inset-inline-end: 18px;
+  width: 16px;
+  height: 16px;
 }
-.appearance-control select {
-  appearance: none;
-  padding-inline-end: 36px;
+.select-control:has(select:disabled) .control-icon {
+  opacity: 0.55;
+}
+@media (forced-colors: active) {
+  .select-control select {
+    appearance: auto;
+  }
+  .select-control .control-icon {
+    display: none;
+  }
+}
+.app-footer {
+  margin-top: auto;
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  padding: 16px 4%;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.app-footer-inner {
+  max-width: 1144px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-footer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.rate-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+}
+.rate-control input {
+  min-width: 0;
+  flex: 1;
+}
+.rate-control > span {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.settings-save {
+  margin: 0 0 36px;
+}
+.settings-save .primary-button {
+  width: auto;
+  min-width: 180px;
+  margin-top: 0;
+}
+.settings-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  min-height: 80px;
+  padding: 20px 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-align: start;
+}
+.settings-action > span:first-child {
+  min-width: 0;
+}
+.settings-action strong,
+.settings-action > span > span {
+  display: block;
+}
+.settings-action > span > span {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+.settings-action > span:last-child {
+  font-size: 28px;
+  color: var(--accent);
+}
+:root[dir='rtl'] .settings-action > span:last-child {
+  transform: rotate(180deg);
+}
+.settings-action:hover strong {
+  color: var(--accent);
+}
+.settings-detail {
+  max-width: 580px;
+  margin: 24px auto;
 }
 .auth-layout {
   max-width: 1240px;
-  min-height: calc(100vh - 88px);
-  min-height: calc(100dvh - 88px);
-  margin: auto;
+  width: 100%;
+  flex: 1;
+  margin: 0 auto;
   padding: 68px 48px;
   padding-bottom: max(48px, env(safe-area-inset-bottom));
   display: grid;
@@ -438,26 +762,36 @@ select:focus-visible,
     padding-right: max(16px, env(safe-area-inset-right));
     gap: 10px;
   }
-  .header-controls {
-    gap: 8px;
-  }
   .brand {
     font-size: 20px;
   }
-  .language-button,
-  .appearance-control select {
-    font-size: 12px;
-    padding: 8px;
+  .settings-layout {
+    padding: 24px max(20px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom))
+      max(20px, env(safe-area-inset-left));
   }
-  .appearance-control select {
-    padding-inline-end: 34px;
+  .preference-controls {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .app-footer {
+    padding: 16px max(24px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom))
+      max(24px, env(safe-area-inset-left));
+  }
+  .settings-save .primary-button {
+    width: 100%;
+  }
+  .form-actions {
+    flex-direction: column;
+  }
+  .form-actions .primary-button,
+  .form-actions .secondary-button {
+    width: 100%;
   }
   .auth-layout {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     padding: 32px 24px;
-    min-height: calc(100dvh - 76px);
     padding-bottom: max(48px, env(safe-area-inset-bottom));
     padding-left: max(24px, env(safe-area-inset-left));
     padding-right: max(24px, env(safe-area-inset-right));
@@ -513,4 +847,28 @@ select:focus-visible,
   gap: 8px;
   margin-top: 20px;
   font-size: 13px;
+}
+.auth-links-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+}
+.auth-links-row .text-button {
+  min-width: 0;
+  padding: 8px 0;
+  text-decoration: none;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.auth-links-row .text-button:last-child {
+  font-weight: 600;
+  text-align: end;
+}
+.auth-links-row .text-button:first-child {
+  text-align: start;
+}
+.auth-links-row .text-button:hover {
+  text-decoration: underline;
 }

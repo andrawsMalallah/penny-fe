@@ -9,6 +9,26 @@ export interface User {
 
 export type LoginResult = User | { two_factor_required: true }
 
+export interface SessionState {
+  user: User | null
+  two_factor_pending: boolean
+}
+
+export function getSessionState(): Promise<SessionState> {
+  return apiRequest<SessionState>('auth/session/')
+}
+
+export interface UserSettings {
+  language: 'en' | 'ar'
+  default_currency: '' | 'IQD' | 'USD'
+  exchange_rate: string | null
+}
+
+export async function signOut(): Promise<void> {
+  await apiRequest<void>('auth/logout/', {})
+  csrfToken = ''
+}
+
 export interface FactorStatus {
   enabled: boolean
   recovery_remaining: number
@@ -80,6 +100,8 @@ function safeFields(payload: unknown): Record<string, string[]> {
     'otp',
     'timezone',
     'language',
+    'default_currency',
+    'exchange_rate',
   ]) {
     const messages = (payload as Record<string, unknown>)[field]
     if (Array.isArray(messages) && messages.every((message) => typeof message === 'string')) {

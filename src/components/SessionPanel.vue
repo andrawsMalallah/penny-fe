@@ -6,6 +6,8 @@ import { copy } from '../lib/copy'
 import { language } from '../lib/preferences'
 import { useAuthFeedback } from '../lib/useAuthFeedback'
 import PrimaryButton from './PrimaryButton.vue'
+import BackButton from './BackButton.vue'
+import RefreshButton from './RefreshButton.vue'
 
 const emit = defineEmits<{ back: []; signedOut: []; expired: [] }>()
 const page = ref(1)
@@ -98,8 +100,12 @@ onMounted(async () => {
 
 <template>
   <div class="session-panel" :aria-busy="busy">
+    <BackButton :disabled="busy" :label="copy.backToSettings" @click="emit('back')" />
     <div class="form-heading">
-      <h2 id="form-title" ref="heading" tabindex="-1">{{ copy.sessionsTitle }}</h2>
+      <div class="session-title-row">
+        <h2 id="form-title" ref="heading" tabindex="-1">{{ copy.sessionsTitle }}</h2>
+        <RefreshButton icon-only :busy="busy || confirming" @click="load(1)" />
+      </div>
       <p>{{ copy.sessionsSubtitle }}</p>
     </div>
     <div v-if="error" ref="errorSummary" class="error-summary" role="alert" tabindex="-1">
@@ -111,18 +117,17 @@ onMounted(async () => {
           {{ copy.confirmSignOutAll }}
         </h3>
         <p>{{ copy.signOutAllNote }}</p>
-        <PrimaryButton type="button" :busy="busy" @click="revoke">{{
-          copy.signOutAll
-        }}</PrimaryButton>
-        <button class="text-button" type="button" :disabled="busy" @click="cancel">
-          {{ copy.cancel }}
-        </button>
+        <div class="form-actions">
+          <PrimaryButton type="button" :busy="busy" @click="revoke">{{
+            copy.signOutAll
+          }}</PrimaryButton>
+          <button class="secondary-button" type="button" :disabled="busy" @click="cancel">
+            {{ copy.cancel }}
+          </button>
+        </div>
       </section>
     </template>
     <template v-else>
-      <button class="text-button" type="button" :disabled="busy" @click="load(1)">
-        {{ copy.refreshSessions }}
-      </button>
       <p v-if="loading" role="status">{{ copy.loading }}</p>
       <template v-else-if="sessions">
         <ul v-if="sessions.results.length" class="session-list" :aria-label="copy.sessionsTitle">
@@ -195,9 +200,6 @@ onMounted(async () => {
         {{ copy.signOutAll }}
       </button>
     </template>
-    <button class="text-button session-back" type="button" :disabled="busy" @click="emit('back')">
-      {{ copy.backToWorkspace }}
-    </button>
   </div>
 </template>
 
@@ -258,10 +260,6 @@ onMounted(async () => {
   border-radius: 8px;
   color: var(--error);
 }
-.session-back {
-  display: block;
-  margin-top: 16px;
-}
 .session-confirmation {
   background: var(--secondary);
   padding: 20px;
@@ -273,8 +271,5 @@ onMounted(async () => {
 }
 .session-confirmation p {
   color: var(--muted);
-}
-.session-confirmation .text-button {
-  margin-top: 12px;
 }
 </style>

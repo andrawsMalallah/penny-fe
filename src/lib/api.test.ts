@@ -1,6 +1,84 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('browser API contract', () => {
+  it.each([
+    { user: null, two_factor_pending: false },
+    { user: null, two_factor_pending: true },
+    { user: { id: 1, display_name: 'Public fixture' }, two_factor_pending: false },
+  ])('loads startup state with one guest-safe request: %j', async (state) => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(state)))
+    vi.stubGlobal('fetch', fetchMock)
+    const { getSessionState } = await import('./api')
+    expect(await getSessionState()).toEqual(state)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/v1/auth/session/')
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+    })
+  })
+
+  it('does not fall back to me or silently treat a failed startup request as a guest', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response('{}', { status: 503 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { getSessionState } = await import('./api')
+    await expect(getSessionState()).rejects.toMatchObject({ status: 503 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+  it('sends exact settings strings and nullable rates without financial browser caching', async () => {
+    const values = { language: 'ar', default_currency: 'USD', exchange_rate: '1310.123456' }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'settings-fixture' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify(values)))
+    vi.stubGlobal('fetch', fetchMock)
+    const { apiRequest } = await import('./api')
+    expect(await apiRequest('settings/', values)).toEqual(values)
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/settings/')
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1].body)).toEqual(values)
+    expect(fetchMock.mock.calls[1]?.[1].cache).toBe('no-store')
+  })
+
+  it('exposes only recognized settings validation fields', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'settings-fixture' })))
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              exchange_rate: ['Enter a positive rate.'],
+              default_currency: ['Choose IQD or USD.'],
+              trace: ['private fixture'],
+            }),
+            { status: 400 },
+          ),
+        ),
+    )
+    const { apiRequest } = await import('./api')
+    await expect(apiRequest('settings/', {})).rejects.toMatchObject({
+      fields: {
+        exchange_rate: ['Enter a positive rate.'],
+        default_currency: ['Choose IQD or USD.'],
+      },
+    })
+  })
+
+  it('refreshes CSRF after navbar logout before the next mutation', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'before-logout' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'after-logout' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 })))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signOut, signIn } = await import('./api')
+    await signOut()
+    await signIn('fixture@example.com', 'Public test phrase 918!')
+    expect(fetchMock.mock.calls[3]?.[1].headers['X-CSRFToken']).toBe('after-logout')
+  })
   it('returns a second-factor challenge without treating it as a profile and refreshes CSRF', async () => {
     const fetchMock = vi
       .fn()

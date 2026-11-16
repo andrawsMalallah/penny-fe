@@ -1,0 +1,37 @@
+<script setup lang="ts">
+defineProps<{
+  name: 'chevron' | 'back' | 'refresh' | 'settings' | 'logout'
+}>()
+
+const paths = {
+  chevron: ['m6 9 6 6 6-6'],
+  back: ['m12 5-7 7 7 7', 'M5 12h14'],
+  refresh: [
+    'M21 3v5h-5',
+    'M3 21v-5h5',
+    'M3 12a9 9 0 0 1 15.364-6.364L21 8',
+    'M21 12a9 9 0 0 1-15.364 6.364L3 16',
+  ],
+  settings: [
+    'M15.25 12a3.25 3.25 0 1 1-6.5 0 3.25 3.25 0 0 1 6.5 0Z',
+    'M9.13 5.07L10.06 4.76L9.92 2.22L14.08 2.22L13.94 4.76L14.87 5.07L15.75 5.50L17.45 3.61L20.39 6.55L18.50 8.25L18.93 9.13L19.24 10.06L21.78 9.92L21.78 14.08L19.24 13.94L18.93 14.87L18.50 15.75L20.39 17.45L17.45 20.39L15.75 18.50L14.87 18.93L13.94 19.24L14.08 21.78L9.92 21.78L10.06 19.24L9.13 18.93L8.25 18.50L6.55 20.39L3.61 17.45L5.50 15.75L5.07 14.87L4.76 13.94L2.22 14.08L2.22 9.92L4.76 10.06L5.07 9.13L5.50 8.25L3.61 6.55L6.55 3.61L8.25 5.50Z',
+  ],
+  logout: ['M9 4H5v16h4', 'M9 12h12', 'm17 8 4 4-4 4'],
+}
+</script>
+
+<template>
+  <svg
+    class="control-icon"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path v-for="path in paths[name]" :key="path" :d="path" />
+  </svg>
+</template>

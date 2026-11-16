@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onMounted, ref } from 'vue'
-import { ApiError, apiRequest, signIn, verifyEmail } from '../lib/api'
+import { apiRequest, getSessionState, signIn, verifyEmail } from '../lib/api'
 import type { User } from '../lib/api'
 import { copy } from '../lib/copy'
 import { language } from '../lib/preferences'
 import { useAuthFeedback } from '../lib/useAuthFeedback'
 import AuthCredentialsForm from './AuthCredentialsForm.vue'
 import AuthVerificationForm from './AuthVerificationForm.vue'
-import AuthWelcomePanel from './AuthWelcomePanel.vue'
 
 const PasswordResetFlow = defineAsyncComponent(() => import('./PasswordResetFlow.vue'))
-const SessionPanel = defineAsyncComponent(() => import('./SessionPanel.vue'))
 const SecondFactorForm = defineAsyncComponent(() => import('./SecondFactorForm.vue'))
-const TwoFactorPanel = defineAsyncComponent(() => import('./TwoFactorPanel.vue'))
-type AuthStage =
-  'login' | 'register' | 'verify' | 'welcome' | 'reset' | 'sessions' | 'factor' | 'security'
+const emit = defineEmits<{ authenticated: [user: User] }>()
+type AuthStage = 'login' | 'register' | 'verify' | 'reset' | 'factor'
 const stage = ref<AuthStage>('login')
 const loading = ref(true)
 const busy = ref(false)
@@ -22,9 +19,7 @@ const displayName = ref('')
 const email = ref('')
 const password = ref('')
 const code = ref('')
-const user = ref<User | null>(null)
 const notice = ref(false)
-const signedOutEverywhere = ref(false)
 const heading = ref<HTMLElement | null>(null)
 const errorSummary = ref<HTMLElement | null>(null)
 const { errorKey, error, clearErrors, fieldError, showError } = useAuthFeedback(errorSummary)
@@ -34,11 +29,8 @@ const title = computed(
       login: copy.value.loginTitle,
       register: copy.value.registerTitle,
       verify: copy.value.verifyTitle,
-      welcome: copy.value.successTitle,
       reset: copy.value.resetTitle,
-      sessions: copy.value.sessionsTitle,
       factor: copy.value.factorLoginTitle,
-      security: copy.value.factorTitle,
     })[stage.value],
 )
 
@@ -55,7 +47,6 @@ async function changeStage(value: AuthStage): Promise<void> {
   stage.value = value
   clearErrors()
   notice.value = false
-  signedOutEverywhere.value = false
   await nextTick()
   heading.value?.focus()
 }
@@ -95,7 +86,6 @@ async function submitCredentials(): Promise<void> {
       password.value = ''
       rememberEmail('')
       if ('two_factor_required' in result) {
-        user.value = null
         await changeStage('factor')
       } else {
         await authenticated(result)
@@ -105,9 +95,8 @@ async function submitCredentials(): Promise<void> {
 }
 
 async function authenticated(value: User): Promise<void> {
-  user.value = value
   language.value = value.language
-  await changeStage('welcome')
+  emit('authenticated', value)
 }
 
 async function switchCredentials(): Promise<void> {
@@ -125,10 +114,10 @@ async function openPasswordReset(): Promise<void> {
 
 async function verify(): Promise<void> {
   await runAction(async () => {
-    user.value = await verifyEmail(code.value)
+    const verifiedUser = await verifyEmail(code.value)
     code.value = ''
     rememberEmail('')
-    await changeStage('welcome')
+    await authenticated(verifiedUser)
   })
 }
 
@@ -140,59 +129,37 @@ async function resend(): Promise<void> {
   })
 }
 
-async function signOut(): Promise<void> {
-  await runAction(async () => {
-    await apiRequest('auth/logout/', {})
-    user.value = null
-    rememberEmail('')
-    await changeStage('login')
-  })
-}
-
-async function finishSession(signedOut: boolean): Promise<void> {
-  user.value = null
-  password.value = ''
-  rememberEmail('')
-  await changeStage('login')
-  signedOutEverywhere.value = signedOut
-  if (!signedOut) errorKey.value = 'sessionError'
-}
-
 async function useDifferentEmail(): Promise<void> {
   rememberEmail('')
   code.value = ''
   await changeStage('register')
 }
 
+function restorePendingEmail(): void {
+  try {
+    const pendingEmail = sessionStorage.getItem('penny.pending-email')
+    if (pendingEmail) {
+      email.value = pendingEmail
+      stage.value = 'verify'
+    }
+  } catch {
+    // Registration can continue without optional browser storage.
+  }
+}
+
 onMounted(async () => {
   try {
-    user.value = await apiRequest<User>('auth/me/')
-    stage.value = 'welcome'
-    language.value = user.value.language
-  } catch (cause) {
-    if (!(cause instanceof ApiError && cause.status === 403)) errorKey.value = 'connection'
-    else {
-      try {
-        const pending = await apiRequest<{ pending: boolean }>('auth/2fa/login/')
-        if (pending.pending) {
-          stage.value = 'factor'
-          return
-        }
-      } catch {
-        errorKey.value = 'connection'
-      }
-    }
-    try {
-      const pendingEmail = sessionStorage.getItem('penny.pending-email')
-      if (pendingEmail) {
-        email.value = pendingEmail
-        stage.value = 'verify'
-      }
-    } catch {
-      // Registration can continue without optional browser storage.
-    }
+    const state = await getSessionState()
+    if (state.user) await authenticated(state.user)
+    else if (state.two_factor_pending) stage.value = 'factor'
+    else restorePendingEmail()
+  } catch {
+    errorKey.value = 'connection'
+    restorePendingEmail()
   } finally {
     loading.value = false
+    await nextTick()
+    heading.value?.focus()
   }
 })
 </script>
@@ -207,17 +174,6 @@ onMounted(async () => {
         @authenticated="authenticated"
         @back="changeStage('login')"
       />
-      <TwoFactorPanel
-        v-else-if="stage === 'security'"
-        @back="changeStage('welcome')"
-        @expired="finishSession(false)"
-      />
-      <SessionPanel
-        v-else-if="stage === 'sessions'"
-        @back="changeStage('welcome')"
-        @signed-out="finishSession(true)"
-        @expired="finishSession(false)"
-      />
       <template v-else>
         <div class="form-heading">
           <h2 id="form-title" ref="heading" tabindex="-1">{{ title }}</h2>
@@ -226,12 +182,10 @@ onMounted(async () => {
           <p v-else-if="stage === 'verify'">
             {{ copy.verifySubtitle }} <bdi class="email-address">{{ email }}</bdi>
           </p>
-          <p v-else>{{ copy.successBody }}</p>
         </div>
         <div v-if="error" ref="errorSummary" class="error-summary" role="alert" tabindex="-1">
           {{ error }}
         </div>
-        <p v-if="signedOutEverywhere" class="notice" role="status">{{ copy.sessionsSignedOut }}</p>
         <AuthCredentialsForm
           v-if="stage === 'register' || stage === 'login'"
           v-model:display-name="displayName"
@@ -254,16 +208,7 @@ onMounted(async () => {
           @resend="resend"
           @change-email="useDifferentEmail"
         />
-        <AuthWelcomePanel
-          v-else
-          :user="user"
-          :busy="busy"
-          @logout="signOut"
-          @sessions="changeStage('sessions')"
-          @security="changeStage('security')"
-        />
       </template>
-      <p class="privacy-note">{{ copy.privacyNote }}</p>
     </template>
   </section>
 </template>

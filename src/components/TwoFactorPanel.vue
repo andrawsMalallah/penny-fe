@@ -5,8 +5,11 @@ import type { FactorSetup, FactorStatus, RecoveryCodes } from '../lib/api'
 import { copy } from '../lib/copy'
 import { useAuthFeedback } from '../lib/useAuthFeedback'
 import AuthInput from './AuthInput.vue'
+import CopyButton from './CopyButton.vue'
 import FactorCodeInput from './FactorCodeInput.vue'
 import PrimaryButton from './PrimaryButton.vue'
+import BackButton from './BackButton.vue'
+import RefreshButton from './RefreshButton.vue'
 
 const emit = defineEmits<{ back: []; expired: [] }>()
 type Step = 'status' | 'password' | 'setup' | 'disable' | 'replace' | 'codes'
@@ -133,8 +136,23 @@ onBeforeUnmount(() => {
 
 <template>
   <div :aria-busy="busy">
+    <BackButton
+      v-if="step === 'status'"
+      :disabled="busy"
+      :label="copy.backToSettings"
+      @click="emit('back')"
+    />
+    <BackButton v-else-if="step !== 'codes'" :disabled="busy" @click="cancel" />
+    <BackButton v-else :label="copy.factorCodesSaved" @click="cancel" />
     <div class="form-heading">
-      <h2 id="form-title" ref="heading" tabindex="-1">{{ title }}</h2>
+      <div class="factor-title-row">
+        <h2 id="form-title" ref="heading" tabindex="-1">{{ title }}</h2>
+        <CopyButton
+          v-if="step === 'codes'"
+          :text="codes.join('\n')"
+          :label="copy.copyRecoveryCodes"
+        />
+      </div>
       <p>{{ step === 'codes' ? copy.factorCodesBody : copy.factorIntro }}</p>
     </div>
     <div v-if="error" ref="errorSummary" class="error-summary" role="alert" tabindex="-1">
@@ -164,12 +182,7 @@ onBeforeUnmount(() => {
           copy.factorSetup
         }}</PrimaryButton>
       </template>
-      <button v-else class="text-button" type="button" @click="load">
-        {{ copy.refreshSessions }}
-      </button>
-      <button class="text-button factor-back" type="button" :disabled="busy" @click="emit('back')">
-        {{ copy.backToWorkspace }}
-      </button>
+      <RefreshButton v-else :busy="busy" @click="load" />
     </template>
     <template v-else-if="step === 'codes'">
       <ul class="recovery-code-list" :aria-label="copy.factorCodesTitle">
@@ -193,7 +206,11 @@ onBeforeUnmount(() => {
           />
           <p class="form-note">{{ copy.factorManual }}</p>
           <div class="factor-key">
-            <strong>{{ copy.factorKey }}</strong><code dir="ltr">{{ setup.secret }}</code>
+            <div class="factor-key-heading">
+              <strong>{{ copy.factorKey }}</strong>
+              <CopyButton :text="setup.secret" :label="copy.copySetupKey" :disabled="busy" />
+            </div>
+            <code dir="ltr">{{ setup.secret }}</code>
           </div>
           <p class="form-note">{{ copy.factorSetupExpiry }}</p>
         </template>
@@ -219,19 +236,21 @@ onBeforeUnmount(() => {
           :busy="busy"
         />
         <p class="form-note">{{ copy.factorSessionNote }}</p>
-        <PrimaryButton :busy="busy">{{
-          step === 'password'
-            ? copy.factorSetup
-            : step === 'setup'
-              ? copy.factorEnable
-              : step === 'replace'
-                ? copy.factorReplace
-                : copy.factorDisable
-        }}</PrimaryButton>
+        <div class="form-actions">
+          <PrimaryButton :busy="busy">{{
+            step === 'password'
+              ? copy.factorSetup
+              : step === 'setup'
+                ? copy.factorEnable
+                : step === 'replace'
+                  ? copy.factorReplace
+                  : copy.factorDisable
+          }}</PrimaryButton>
+          <button class="secondary-button" type="button" :disabled="busy" @click="cancel">
+            {{ copy.cancel }}
+          </button>
+        </div>
       </form>
-      <button class="text-button" type="button" :disabled="busy" @click="cancel">
-        {{ copy.cancel }}
-      </button>
     </template>
   </div>
 </template>
@@ -243,10 +262,6 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   gap: 8px;
 }
-.factor-back {
-  display: block;
-  margin-top: 20px;
-}
 .factor-qr {
   display: block;
   max-width: 100%;
@@ -257,22 +272,38 @@ onBeforeUnmount(() => {
   border-radius: 8px;
 }
 .factor-key {
+  margin-top: 12px;
   padding: 16px;
   background: var(--secondary);
   border: 1px solid var(--line);
   border-radius: 8px;
 }
 .factor-key strong {
-  display: block;
-  margin-bottom: 8px;
   font-size: 12px;
 }
 .factor-key code {
   display: block;
-  margin-top: 8px;
   overflow-wrap: anywhere;
   font-size: 16px;
   user-select: all;
+}
+.factor-key-heading,
+.factor-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.factor-key-heading {
+  margin-bottom: 8px;
+}
+.factor-title-row {
+  margin-bottom: 8px;
+}
+.factor-title-row h2 {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
 }
 .recovery-code-list {
   list-style: none;

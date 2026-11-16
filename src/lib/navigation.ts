@@ -1,0 +1,24 @@
+import { onScopeDispose, ref } from 'vue'
+
+export type Page = 'home' | 'settings' | 'preferences'
+
+export function pageFromHash(hash: string): Page {
+  if (hash === '#/settings') return 'settings'
+  if (hash === '#/preferences') return 'preferences'
+  return 'home'
+}
+
+export function useNavigation() {
+  const page = ref<Page>(pageFromHash(window.location.hash))
+  const update = (): void => {
+    page.value = pageFromHash(window.location.hash)
+  }
+  window.addEventListener('hashchange', update)
+  onScopeDispose(() => window.removeEventListener('hashchange', update))
+  function navigate(value: Page): void {
+    page.value = value
+    window.location.hash = value === 'home' ? '/' : `/${value}`
+    window.scrollTo(0, 0)
+  }
+  return { page, navigate }
+}
