@@ -9,11 +9,12 @@ type AuthErrorKey =
   | 'loginRateLimit'
   | 'invalidCredentials'
   | 'unavailable'
+  | 'sessionsUnavailable'
   | 'sessionError'
   | 'invalidCode'
   | 'validation'
   | 'connection'
-type ErrorContext = 'login' | 'code' | 'form'
+type ErrorContext = 'login' | 'code' | 'form' | 'sessions'
 
 export function useAuthFeedback(errorSummary: Ref<HTMLElement | null>) {
   const errorKey = ref<AuthErrorKey | ''>('')
@@ -45,7 +46,8 @@ export function useAuthFeedback(errorSummary: Ref<HTMLElement | null>) {
     else if (cause.status === 429)
       errorKey.value = context === 'login' ? 'loginRateLimit' : 'rateLimit'
     else if (cause.status === 401) errorKey.value = 'invalidCredentials'
-    else if (cause.status === 503) errorKey.value = 'unavailable'
+    else if (cause.status === 503)
+      errorKey.value = context === 'sessions' ? 'sessionsUnavailable' : 'unavailable'
     else if (cause.status === 403) errorKey.value = 'sessionError'
     else if (cause.status === 400)
       errorKey.value = context === 'code' || cause.fields.code ? 'invalidCode' : 'validation'

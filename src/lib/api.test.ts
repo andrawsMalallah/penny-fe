@@ -4,6 +4,75 @@ describe('browser API contract', () => {
   beforeEach(() => vi.resetModules())
   afterEach(() => vi.unstubAllGlobals())
 
+  it('refreshes CSRF after signing out all devices before another sign-in', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'old-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'new-token' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 })))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signOutAll, signIn } = await import('./api')
+    await signOutAll()
+    await signIn('test@example.com', 'Private test phrase 592!')
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/auth/logout-all/')
+    expect(fetchMock.mock.calls[3]?.[1].headers['X-CSRFToken']).toBe('new-token')
+  })
+
+  it('does not automatically repeat a failed sign-out-all mutation', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'token' })))
+      .mockRejectedValueOnce(new TypeError('Network unavailable'))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signOutAll } = await import('./api')
+    await expect(signOutAll()).rejects.toThrow('Network unavailable')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('loads each session page fresh using only the local API path', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ count: 0, next: null, previous: null, results: [] })),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    const { getSessions } = await import('./api')
+    await getSessions(2)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/v1/auth/sessions/?page=2')
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+  })
+
+  it('refreshes CSRF after signing out all devices before a new sign-in', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'before-revocation' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'after-revocation' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 })))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signOutAll, signIn } = await import('./api')
+    await signOutAll()
+    await signIn('test@example.com', 'Test sign-in password phrase')
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/auth/logout-all/')
+    expect(fetchMock.mock.calls[3]?.[1].headers['X-CSRFToken']).toBe('after-revocation')
+  })
+
+  it('never automatically retries a failed sign-out-all request', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'token' })))
+      .mockResolvedValueOnce(new Response('{}', { status: 403 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signOutAll } = await import('./api')
+    await expect(signOutAll()).rejects.toMatchObject({ status: 403 })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('fetches CSRF before a mutation and sends cookie credentials', async () => {
     const fetchMock = vi
       .fn()

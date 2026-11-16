@@ -86,6 +86,27 @@ select:focus-visible,
   border-radius: 8px;
   background: var(--page);
 }
+.appearance-control {
+  position: relative;
+  display: inline-flex;
+  color: var(--ink);
+}
+.appearance-control::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: 14px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.appearance-control select {
+  appearance: none;
+  padding-inline-end: 36px;
+}
 .auth-layout {
   max-width: 1240px;
   min-height: calc(100vh - 88px);
@@ -340,11 +361,13 @@ select:focus-visible,
 .form-field .code-input {
   text-align: center;
   letter-spacing: 0.35em;
+  /* Balance the trailing letter space so the visible digits remain centered. */
+  text-indent: 0.35em;
   font-variant-numeric: tabular-nums;
   font-size: 25px;
 }
-.code-input::placeholder {
-  font-size: 25px;
+.form-field .code-input::placeholder {
+  font-size: inherit;
 }
 .notice {
   color: var(--accent);
@@ -425,6 +448,9 @@ select:focus-visible,
   .appearance-control select {
     font-size: 12px;
     padding: 8px;
+  }
+  .appearance-control select {
+    padding-inline-end: 34px;
   }
   .auth-layout {
     display: flex;

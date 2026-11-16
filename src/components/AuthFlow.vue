@@ -10,7 +10,8 @@ import AuthVerificationForm from './AuthVerificationForm.vue'
 import AuthWelcomePanel from './AuthWelcomePanel.vue'
 
 const PasswordResetFlow = defineAsyncComponent(() => import('./PasswordResetFlow.vue'))
-type AuthStage = 'login' | 'register' | 'verify' | 'welcome' | 'reset'
+const SessionPanel = defineAsyncComponent(() => import('./SessionPanel.vue'))
+type AuthStage = 'login' | 'register' | 'verify' | 'welcome' | 'reset' | 'sessions'
 const stage = ref<AuthStage>('login')
 const loading = ref(true)
 const busy = ref(false)
@@ -20,6 +21,7 @@ const password = ref('')
 const code = ref('')
 const user = ref<User | null>(null)
 const notice = ref(false)
+const signedOutEverywhere = ref(false)
 const heading = ref<HTMLElement | null>(null)
 const errorSummary = ref<HTMLElement | null>(null)
 const { errorKey, error, clearErrors, fieldError, showError } = useAuthFeedback(errorSummary)
@@ -31,6 +33,7 @@ const title = computed(
       verify: copy.value.verifyTitle,
       welcome: copy.value.successTitle,
       reset: copy.value.resetTitle,
+      sessions: copy.value.sessionsTitle,
     })[stage.value],
 )
 
@@ -47,6 +50,7 @@ async function changeStage(value: AuthStage): Promise<void> {
   stage.value = value
   clearErrors()
   notice.value = false
+  signedOutEverywhere.value = false
   await nextTick()
   heading.value?.focus()
 }
@@ -130,6 +134,15 @@ async function signOut(): Promise<void> {
   })
 }
 
+async function finishSession(signedOut: boolean): Promise<void> {
+  user.value = null
+  password.value = ''
+  rememberEmail('')
+  await changeStage('login')
+  signedOutEverywhere.value = signedOut
+  if (!signedOut) errorKey.value = 'sessionError'
+}
+
 async function useDifferentEmail(): Promise<void> {
   rememberEmail('')
   code.value = ''
@@ -163,6 +176,12 @@ onMounted(async () => {
     <p v-if="loading" id="form-title" role="status">{{ copy.loading }}</p>
     <template v-else>
       <PasswordResetFlow v-if="stage === 'reset'" @back="changeStage('login')" />
+      <SessionPanel
+        v-else-if="stage === 'sessions'"
+        @back="changeStage('welcome')"
+        @signed-out="finishSession(true)"
+        @expired="finishSession(false)"
+      />
       <template v-else>
         <div class="form-heading">
           <h2 id="form-title" ref="heading" tabindex="-1">{{ title }}</h2>
@@ -176,6 +195,7 @@ onMounted(async () => {
         <div v-if="error" ref="errorSummary" class="error-summary" role="alert" tabindex="-1">
           {{ error }}
         </div>
+        <p v-if="signedOutEverywhere" class="notice" role="status">{{ copy.sessionsSignedOut }}</p>
         <AuthCredentialsForm
           v-if="stage === 'register' || stage === 'login'"
           v-model:display-name="displayName"
@@ -198,7 +218,13 @@ onMounted(async () => {
           @resend="resend"
           @change-email="useDifferentEmail"
         />
-        <AuthWelcomePanel v-else :user="user" :busy="busy" @logout="signOut" />
+        <AuthWelcomePanel
+          v-else
+          :user="user"
+          :busy="busy"
+          @logout="signOut"
+          @sessions="changeStage('sessions')"
+        />
       </template>
       <p class="privacy-note">{{ copy.privacyNote }}</p>
     </template>

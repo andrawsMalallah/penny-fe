@@ -7,6 +7,30 @@ export interface User {
   timezone: string
 }
 
+export interface SignedInSession {
+  browser: string
+  device: string
+  signed_in_at: string | null
+  last_active_at: string
+  is_current: boolean
+}
+
+export interface SessionPage {
+  count: number
+  next: string | null
+  previous: string | null
+  results: SignedInSession[]
+}
+
+export function getSessions(page = 1): Promise<SessionPage> {
+  return apiRequest<SessionPage>(`auth/sessions/?page=${page}`)
+}
+
+export async function signOutAll(): Promise<void> {
+  await apiRequest<void>('auth/logout-all/', {})
+  csrfToken = ''
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,

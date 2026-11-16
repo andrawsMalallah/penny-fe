@@ -16,6 +16,13 @@ afterEach(() => {
 })
 
 describe('shared authentication feedback', () => {
+  it('uses session-specific availability feedback in both languages', async () => {
+    const feedback = useAuthFeedback(ref(null))
+    await feedback.showError(new ApiError(503, {}), 'sessions')
+    expect(feedback.error.value).toBe(copy.value.sessionsUnavailable)
+    language.value = 'ar'
+    expect(feedback.error.value).toBe(copy.value.sessionsUnavailable)
+  })
   it('keeps sign-in rate limits distinct from code-request limits and focuses the error', async () => {
     const focus = vi.fn()
     const feedback = useAuthFeedback(ref({ focus } as unknown as HTMLElement))
