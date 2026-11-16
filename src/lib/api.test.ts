@@ -83,4 +83,33 @@ describe('browser API contract', () => {
     await apiRequest('auth/logout/', {})
     expect(fetchMock.mock.calls[3]?.[1].headers['X-CSRFToken']).toBe('after-login')
   })
+
+  it('refreshes CSRF after password recovery ends the session before sign-in', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'recovery-token' })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'fresh-token' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 })))
+    vi.stubGlobal('fetch', fetchMock)
+    const { resetPassword, signIn } = await import('./api')
+    await resetPassword('New test password phrase 572!')
+    await signIn('test@example.com', 'New test password phrase 572!')
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/auth/password-reset/complete/')
+    expect(fetchMock.mock.calls[3]?.[1].headers['X-CSRFToken']).toBe('fresh-token')
+  })
+
+  it('does not retry a failed recovery mutation', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'token' })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ code: ['Expired'] }), { status: 400 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { resetPassword } = await import('./api')
+    await expect(resetPassword('New test password phrase 572!')).rejects.toMatchObject({
+      status: 400,
+      fields: { code: ['Expired'] },
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
 })

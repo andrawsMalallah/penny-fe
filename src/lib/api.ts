@@ -77,3 +77,9 @@ export async function signIn(email: string, password: string): Promise<User> {
   csrfToken = ''
   return user
 }
+
+export async function resetPassword(password: string): Promise<void> {
+  await apiRequest<void>('auth/password-reset/complete/', { password })
+  // Recovery flushes the browser session. The next sign-in needs a fresh token.
+  csrfToken = ''
+}
