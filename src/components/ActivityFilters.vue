@@ -32,7 +32,9 @@ function fieldError(field: string): string | undefined {
           ><SelectControl id="activity-kind" v-model="filters.kind" :disabled="busy"
             ><option value="">{{ text.allTypes }}</option>
             <option value="income">{{ text.income }}</option>
-            <option value="expense">{{ text.expense }}</option></SelectControl
+            <option value="expense">{{ text.expense }}</option>
+            <option value="transfer">{{ text.transfer }}</option>
+            <option value="exchange">{{ text.exchange }}</option></SelectControl
           ></FormField
         >
         <FormField id="activity-currency" :label="text.currency" :error="fieldError('currency')"

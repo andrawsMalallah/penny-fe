@@ -16,9 +16,13 @@ defineProps<{
     | 'activity'
     | 'income'
     | 'expense'
+    | 'transfer'
+    | 'exchange'
 }>()
 
 const paths = {
+  exchange: ['M4 7h16', 'm16 3 4 4-4 4', 'M20 17H4', 'm8 13-4 4 4 4'],
+  transfer: ['M4 7h16', 'm16 3 4 4-4 4', 'M20 17H4', 'm8 13-4 4 4 4'],
   activity: ['M4 3h16v18H4Z', 'M8 7h8', 'M8 12h8', 'M8 17h5'],
   income: ['M12 19V5', 'm6 11 6-6 6 6'],
   expense: ['M12 5v14', 'm6 13 6 6 6-6'],

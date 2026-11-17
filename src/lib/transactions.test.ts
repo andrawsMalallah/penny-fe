@@ -52,6 +52,7 @@ describe('transaction dates and API reads', () => {
           JSON.stringify({
             amount: ['Insufficient funds'],
             date: ['Too early'],
+            destination: ['Unavailable account'],
             detail: 'Private exception',
           }),
           { status: 400 },
@@ -59,7 +60,34 @@ describe('transaction dates and API reads', () => {
       ),
     )
     await expect(apiRequest('transactions/')).rejects.toEqual(
-      new ApiError(400, { amount: ['Insufficient funds'], date: ['Too early'] }),
+      new ApiError(400, {
+        amount: ['Insufficient funds'],
+        date: ['Too early'],
+        destination: ['Unavailable account'],
+      }),
+    )
+  })
+  it('requests transfers for either-side account filtering without converting money', async () => {
+    const result = {
+      count: 1,
+      results: [{ kind: 'transfer', account: 1, destination: 33, amount: '9999999999999999.99' }],
+      next: null,
+      previous: null,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(result)))
+    vi.stubGlobal('fetch', fetchMock)
+    expect(
+      await getTransactions({
+        account: '33',
+        kind: 'transfer',
+        currency: 'IQD',
+        start: '',
+        end: '',
+      }),
+    ).toEqual(result)
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/transactions/?page=1&account=33&kind=transfer&currency=IQD',
+      expect.objectContaining({ method: 'GET', cache: 'no-store' }),
     )
   })
 })

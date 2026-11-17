@@ -1,6 +1,28 @@
 # Penny frontend
 
-Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups, opening balances, expense categories and income/expense Activity are implemented. Transfers, exchanges, debts and analytics remain pending.
+Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups, opening balances, expense categories, income/expense Activity, transfers and currency exchanges are implemented. Debts and analytics remain pending.
+
+## Currency exchanges
+
+Activity → **Exchange currency** converts IQD ↔ USD within one account. Choose account, paid currency/amount, date and optional note. A saved Settings rate is required for a new exchange; the form prefills it and allows an override for this exchange only. An existing exchange opens with its recorded rate, even if Settings later changes/clears. No default account/currency is silently chosen.
+
+**Review exchange** shows the account, paid amount, calculated received amount/currency, actual rate, fixed date and optional note before **Confirm exchange** can write. The preview uses exact BigInt rational arithmetic, rounding received cents half-up, and the backend recomputes it with Decimal. Zero/unsupported results cannot be reviewed. Change details returns to the populated form; Cancel/Back leaves the draft. No preview mutation/API call is sent. Create retries retain the same memory-only UUID and reviewed snapshot, with no automatic replay.
+
+Activity shows one exchange with paid/received legs and actual rate, excluded from income/spending. Currency filters match either leg. Edit and confirmed deletion recheck both histories atomically, so spent received funds may prevent a correction/deletion. Shared choices, readiness/retry, version conflicts, CSRF and no-financial-storage rules remain unchanged.
+
+Current local verification: **81 frontend tests**, lint/format/typechecked production build and 26 date/exchange tests under America/Los_Angeles. The exact preview has 20 rounding/bounds tests. Public-fixture exchange interactions and **96 list/editor/review/deletion responsive checks** pass across EN/AR, Light/Dark and 320/390/768/844 landscape/1024/1440. Existing Activity/transfer regressions are recorded in the root exchange review. Screenshots inspected including 320px. Browser tools/artifacts stay outside the repo/CI. Existing non-failing Node/Vitest localStorage warning remains. Physical-device acceptance is separate.
+
+Manual acceptance on phone/desktop: save a rate in Settings, open Exchange currency, review then confirm USD → IQD and IQD → USD. Check both balances and one Activity entry. Override a rate, then verify Settings and prior exchanges stay unchanged. Test halfway rounding (1 IQD at 200 gives 0.01 USD), zero-rounding rejection, insufficient funds, edit/confirmed deletion and cancellation. Spend received funds and verify removing the supporting exchange is rejected. Check Arabic/English, System/Light/Dark, portrait/landscape and keyboard/calendar/zoom behavior.
+
+## Account transfers
+
+In Activity choose **Transfer money**. Select distinct From/To accounts, one IQD/USD currency, amount, fixed date and optional note. Transfer defaults stay empty; spending defaults are not applied. The earliest date is the later of both opening dates. Both account reads and paginated choices must succeed before saving. Same-account selection explains the issue and disables saving. The server remains authoritative for historical funds and archived references.
+
+Activity shows one neutral transfer amount, both account names and archive labels. The account filter matches incoming and outgoing transfers, and Type includes Transfer. Edit/confirmed deletion reuse the version/UUID retry and focus/error behavior. A destination field error is sanitized and linked to its control. No financial records are persisted in browser storage, and mutations are never automatically replayed.
+
+Current verification: **61 unit tests**, ESLint/Prettier and Vue/TypeScript production build pass. Local public-fixture transfer interactions cover create/edit/delete, historical-funds rejection, cancel/focus, same-account guards, explicit same-ID retry, stale CSRF without replay, conflict, either-side filtering, paginated/archived destinations and failed choice/context recovery. **72 transfer list/editor/confirmation checks** and the **72 existing Activity regression checks** pass across EN/AR, Light/Dark and 320/390/768/844 landscape/1024/1440. Screenshots inspected, including 320px. Existing non-failing Node/Vitest localStorage warning remains. Browser tooling stays local outside this repo/CI. Actual phone acceptance is pending.
+
+Manual acceptance: on phone and desktop open Activity, transfer a small IQD amount between two accounts, then check both balances in Accounts/Overview and filter Activity by the destination. Repeat in USD; IQD must remain unchanged. Edit amount/account/date, cancel then confirm deletion, and check both sides. Try the same account twice, too much money and dates before either opening. Spend transferred funds and verify deleting/reducing the supporting transfer is rejected. Check Arabic/English, Light/Dark/System, portrait/landscape and keyboard focus.
 
 ## Income, expenses and Activity
 
@@ -30,7 +52,7 @@ Authenticated workspace navigation includes lazy-loaded `#/accounts`. It support
 
 AccountEditor separates form markup from AccountsPage coordination. AccountSelect and PageControls share bounded, fresh API selection/pagination, including current selections outside the visible page. No financial records are persisted in browser storage. Amount display groups decimal strings without converting to floating point. Copy is in `src/lib/accountCopy.ts`, styles in `src/styles/accounts.css`.
 
-Current balances include opening money and live income/expense movements. Income/expense corrections are supported; transfers, exchanges, debts, targets and analytics remain future work. Archiving retains money and clears the default; restoration does not automatically choose it again. A group with active accounts must be emptied/archived first. Opening amounts and dates are fixed at creation; existing opening dates are populated by the reviewed backend migration.
+Current balances include opening money, live income/expenses, transfers and both exchange legs. Income/expense/transfer/exchange corrections are supported; debts, targets and analytics remain future work. Archiving retains money and clears the default; restoration does not automatically choose it again. A group with active accounts must be emptied/archived first. Opening amounts and dates are fixed at creation; existing opening dates are populated by the reviewed backend migration.
 
 Local verification: 52 tests plus lint/format/typecheck/production build; local simulated-API Chrome review of EN/AR, light/dark, 320px through desktop, validation, empty/error/retry, archive/restore and stale-CSRF behavior. Real-device acceptance remains pending. Browser tooling/artifacts stay outside this repository and CI.
 

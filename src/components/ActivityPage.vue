@@ -6,6 +6,7 @@ import { categoryName } from '../lib/categories'
 import { activityCopy as text } from '../lib/activityCopy'
 import { accountCopy } from '../lib/accountCopy'
 import { language } from '../lib/preferences'
+import { receivedCurrency } from '../lib/exchanges'
 import {
   dateLabel,
   getTransactions,
@@ -239,10 +240,19 @@ onMounted(async () => {
         {{ text.deleteTitle }}
       </h2>
       <p class="confirmation-name">
-        {{ confirmation.kind === 'income' ? text.income : text.expense }} ·
+        {{ text[confirmation.kind] }} ·
         <bdi>{{ formatMoney(confirmation.amount) }} {{ confirmation.currency }}</bdi>
       </p>
       <p dir="auto">{{ confirmation.account_name }}</p>
+      <p v-if="confirmation.kind === 'exchange' && confirmation.received_amount">
+        <bdi
+          >{{ formatMoney(confirmation.received_amount) }}
+          {{ receivedCurrency(confirmation.currency) }}</bdi
+        >
+      </p>
+      <p v-if="confirmation.destination" dir="auto">
+        {{ text.toAccount }}: {{ confirmation.destination_name }}
+      </p>
       <p>{{ dateLabel(confirmation.date, language) }}</p>
       <p class="field-help">{{ text.deleteHelp }}</p>
       <div class="form-actions">
@@ -278,6 +288,24 @@ onMounted(async () => {
         >
           {{ text.addIncome }}
         </button>
+        <button
+          id="add-transfer"
+          type="button"
+          class="secondary-button"
+          :disabled="busy"
+          @click="edit(null, 'transfer', $event)"
+        >
+          {{ text.addTransfer }}
+        </button>
+        <button
+          id="add-exchange"
+          type="button"
+          class="secondary-button"
+          :disabled="busy"
+          @click="edit(null, 'exchange', $event)"
+        >
+          {{ text.addExchange }}
+        </button>
       </div>
       <ActivityFilters
         v-model="filters"
@@ -298,11 +326,11 @@ onMounted(async () => {
       <ul v-if="records?.count" class="transaction-list surface-panel">
         <li v-for="record in records.results" :key="record.id" class="transaction-row">
           <span class="transaction-direction" :class="`transaction-${record.kind}`"
-            ><ControlIcon :name="record.kind === 'income' ? 'income' : 'expense'"
+            ><ControlIcon :name="record.kind"
           /></span>
           <div class="transaction-description">
             <h2>
-              {{ record.kind === 'income' ? text.income : text.expense
+              {{ text[record.kind]
               }}<span v-if="record.category">
                 ·
                 {{
@@ -314,16 +342,30 @@ onMounted(async () => {
               >
             </h2>
             <p>
+              <span v-if="record.destination">{{ text.fromAccount }}: </span>
               <span dir="auto">{{ record.account_name }}</span><span v-if="record.account_archived">
                 ({{ text.archived }})</span
               >
             </p>
+            <p v-if="record.destination">
+              {{ text.toAccount }}: <span dir="auto">{{ record.destination_name }}</span>
+              <span v-if="record.destination_archived"> ({{ text.archived }})</span>
+            </p>
             <time :datetime="record.date">{{ dateLabel(record.date, language) }}</time>
+            <p v-if="record.exchange_rate">
+              <bdi>1 USD = {{ record.exchange_rate }} IQD</bdi>
+            </p>
             <p v-if="record.note" class="transaction-note" dir="auto">{{ record.note }}</p>
           </div>
           <div class="transaction-value" :class="`transaction-${record.kind}`">
-            <bdi>{{ record.kind === 'income' ? '+' : '−' }}{{ formatMoney(record.amount) }}</bdi
+            <bdi
+              >{{ record.kind === 'transfer' ? '' : record.kind === 'income' ? '+' : '−'
+              }}{{ formatMoney(record.amount) }}</bdi
             ><span class="currency-badge">{{ record.currency }}</span>
+            <template v-if="record.kind === 'exchange' && record.received_amount">
+              <bdi>+{{ formatMoney(record.received_amount) }}</bdi>
+              <span class="currency-badge">{{ receivedCurrency(record.currency) }}</span>
+            </template>
           </div>
           <div class="transaction-row-actions">
             <button

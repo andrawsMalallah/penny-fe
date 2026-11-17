@@ -2,6 +2,29 @@
   width: min(100%, 1080px);
   margin-inline: auto;
 }
+.exchange-breakdown {
+  display: grid;
+  gap: 16px;
+  margin-block: 24px;
+}
+.exchange-breakdown > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.exchange-breakdown dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.exchange-review > .text-button {
+  min-height: 44px;
+  margin-top: 12px;
+}
 .activity-page-heading {
   display: flex;
   align-items: center;
