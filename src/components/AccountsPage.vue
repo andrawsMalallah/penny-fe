@@ -11,6 +11,7 @@ import {
 } from '../lib/accounts'
 import { accountCopy as text } from '../lib/accountCopy'
 import { language } from '../lib/preferences'
+import { dateLabel as calendarDateLabel } from '../lib/transactions'
 import BackButton from './BackButton.vue'
 import ControlIcon from './ControlIcon.vue'
 import PageControls from './PageControls.vue'
@@ -339,6 +340,10 @@ onMounted(async () => {
                 </div>
               </dl>
               <p>{{ text.openingRecorded }}: {{ dateLabel(record.opening.recorded_at) }}</p>
+              <p v-if="record.opening.effective_date">
+                {{ text.openingDate }}:
+                {{ calendarDateLabel(record.opening.effective_date, language) }}
+              </p>
             </details>
             <p v-if="record.archived" class="field-help account-archive-note">
               {{ text.archiveFunds }}

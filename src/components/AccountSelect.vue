@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { apiRequest } from '../lib/api'
-import {
-  getAccountPage,
-  type AccountGroup,
-  type AccountResource,
-  type RecordPage,
-} from '../lib/accounts'
+import { getAccountPage, type AccountResource, type RecordPage } from '../lib/accounts'
 import { accountCopy as text } from '../lib/accountCopy'
 import SelectControl from './SelectControl.vue'
 import PageControls from './PageControls.vue'
+import { categoryName } from '../lib/categories'
+import type { AccountGroup } from '../lib/accounts'
+import type { ExpenseCategory } from '../lib/categories'
+import { language } from '../lib/preferences'
 
 const model = defineModel<string>({ required: true })
 const props = defineProps<{
@@ -19,23 +18,31 @@ const props = defineProps<{
   disabled?: boolean
   invalid?: boolean
   describedBy?: string
+  includeArchived?: boolean
 }>()
-const emit = defineEmits<{ error: [cause: unknown] }>()
-const records = ref<RecordPage<AccountGroup> | null>(null)
-const selected = ref<AccountGroup | null>(null)
+const emit = defineEmits<{ error: [cause: unknown]; ready: [ready: boolean] }>()
+type Choice = AccountGroup | ExpenseCategory
+const records = ref<RecordPage<Choice> | null>(null)
+const selected = ref<Choice | null>(null)
 const page = ref(1)
 const busy = ref(false)
 const failed = ref(false)
 async function load(value = 1): Promise<void> {
   busy.value = true
+  emit('ready', false)
   failed.value = false
   try {
-    const result = await getAccountPage<AccountGroup>(props.resource, value)
+    const result = await getAccountPage<Choice>(
+      props.resource,
+      value,
+      props.includeArchived ? 'all' : false,
+    )
     if (model.value && !result.results.some((item) => String(item.id) === model.value)) {
-      selected.value = await apiRequest<AccountGroup>(`${props.resource}/${model.value}/`)
+      selected.value = await apiRequest<Choice>(`${props.resource}/${model.value}/`)
     } else selected.value = null
     records.value = result
     page.value = value
+    emit('ready', true)
   } catch (cause) {
     failed.value = true
     emit('error', cause)
@@ -44,6 +51,10 @@ async function load(value = 1): Promise<void> {
   }
 }
 onMounted(() => load())
+function label(item: Choice): string {
+  const name = 'name' in item ? item.name : categoryName(item, language.value)
+  return item.archived ? `${name} (${text.value.archived})` : name
+}
 </script>
 <template>
   <div class="account-select" :aria-busy="busy">
@@ -59,10 +70,10 @@ onMounted(() => load())
         v-if="selected && !records?.results.some((item) => item.id === selected?.id)"
         :value="String(selected.id)"
       >
-        {{ selected.name }}
+        {{ label(selected) }}
       </option>
       <option v-for="item in records?.results ?? []" :key="item.id" :value="String(item.id)">
-        {{ item.name }}
+        {{ label(item) }}
       </option>
     </SelectControl>
     <p v-if="busy" class="field-help" role="status">{{ text.loading }}</p>

@@ -1,8 +1,9 @@
 import { onScopeDispose, ref } from 'vue'
 
-export type Page = 'home' | 'settings' | 'preferences' | 'accounts'
+export type Page = 'home' | 'settings' | 'preferences' | 'accounts' | 'activity'
 
 export function pageFromHash(hash: string): Page {
+  if (hash === '#/activity') return 'activity'
   if (hash === '#/accounts') return 'accounts'
   if (hash === '#/settings') return 'settings'
   if (hash === '#/preferences') return 'preferences'

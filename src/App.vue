@@ -8,6 +8,7 @@ import AppFooter from './components/GuestFooter.vue'
 import { copy } from './lib/copy'
 import { accountCopy } from './lib/accountCopy'
 import { designCopy } from './lib/designCopy'
+import { activityCopy } from './lib/activityCopy'
 import { useNavigation } from './lib/navigation'
 import { initializePreferences, language } from './lib/preferences'
 import { useWorkspaceSession } from './lib/useWorkspaceSession'
@@ -15,6 +16,7 @@ import { useWorkspaceSession } from './lib/useWorkspaceSession'
 initializePreferences()
 const SettingsPage = defineAsyncComponent(() => import('./components/SettingsPage.vue'))
 const AccountsPage = defineAsyncComponent(() => import('./components/AccountsPage.vue'))
+const ActivityPage = defineAsyncComponent(() => import('./components/ActivityPage.vue'))
 const OverviewPage = defineAsyncComponent(() => import('./components/OverviewPage.vue'))
 const PreferencesPage = defineAsyncComponent(() => import('./components/PreferencesPage.vue'))
 const { page, navigate } = useNavigation()
@@ -35,13 +37,15 @@ watch(
   [page, user, language],
   () => {
     document.title =
-      page.value === 'accounts' && user.value
-        ? `${accountCopy.value.accounts} | Penny`
-        : page.value === 'settings' && user.value
-          ? `${copy.value.settings} | Penny`
-          : page.value === 'preferences'
-            ? `${copy.value.languageAppearance} | Penny`
-            : 'Penny'
+      page.value === 'activity' && user.value
+        ? `${activityCopy.value.title} | Penny`
+        : page.value === 'accounts' && user.value
+          ? `${accountCopy.value.accounts} | Penny`
+          : page.value === 'settings' && user.value
+            ? `${copy.value.settings} | Penny`
+            : page.value === 'preferences'
+              ? `${copy.value.languageAppearance} | Penny`
+              : 'Penny'
   },
   { immediate: true },
 )
@@ -57,11 +61,13 @@ watch(
       :user="user"
       :busy="busy"
       :title="
-        page === 'accounts'
-          ? accountCopy.accounts
-          : page === 'home'
-            ? designCopy.overview
-            : copy.settings
+        page === 'activity'
+          ? activityCopy.title
+          : page === 'accounts'
+            ? accountCopy.accounts
+            : page === 'home'
+              ? designCopy.overview
+              : copy.settings
       "
       @settings="navigate('settings')"
       @logout="logout"
@@ -90,6 +96,7 @@ watch(
         @saved="updateLanguage"
         @accounts="navigate('accounts')"
       />
+      <ActivityPage v-else-if="page === 'activity' && user" @expired="finishSession(false, true)" />
       <PreferencesPage
         v-else-if="page === 'preferences' && user"
         @back="navigate(user ? 'settings' : 'home')"

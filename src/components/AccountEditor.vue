@@ -35,7 +35,11 @@ function save(): void {
           group: group.value ? Number(group.value) : null,
           ...(props.item
             ? {}
-            : { opening_iqd: openingIqd.value.trim(), opening_usd: openingUsd.value.trim() }),
+            : {
+                opening_iqd: openingIqd.value.trim(),
+                opening_usd: openingUsd.value.trim(),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              }),
         },
   )
 }

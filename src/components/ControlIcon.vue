@@ -13,9 +13,15 @@ defineProps<{
     | 'eye'
     | 'eyeOff'
     | 'category'
+    | 'activity'
+    | 'income'
+    | 'expense'
 }>()
 
 const paths = {
+  activity: ['M4 3h16v18H4Z', 'M8 7h8', 'M8 12h8', 'M8 17h5'],
+  income: ['M12 19V5', 'm6 11 6-6 6 6'],
+  expense: ['M12 5v14', 'm6 13 6 6 6-6'],
   category: ['M3 3h7v7H3Z', 'M14 3h7v7h-7Z', 'M3 14h7v7H3Z', 'M14 14h7v7h-7Z'],
   home: ['m3 10 9-7 9 7', 'M5 9v12h14V9', 'M9 21v-8h6v8'],
   wallet: ['M20 7H5a2 2 0 0 1 0-4h13v4', 'M5 7H3v14h18V7Z', 'M21 11h-6v6h6', 'M17 14h1'],

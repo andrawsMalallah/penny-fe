@@ -11,13 +11,14 @@ export interface MoneyAccount extends AccountGroup {
   created_at: string
   balance_iqd: string
   balance_usd: string
-  opening: { iqd: string; usd: string; recorded_at: string }
+  opening: { iqd: string; usd: string; recorded_at: string; effective_date?: string }
 }
 export interface AccountValues {
   name: string
   group: number | null
   opening_iqd?: string
   opening_usd?: string
+  timezone?: string
 }
 export interface RecordPage<T> {
   count: number
@@ -25,8 +26,12 @@ export interface RecordPage<T> {
   previous: string | null
   results: T[]
 }
-export type AccountResource = 'accounts' | 'account-groups'
-export function getAccountPage<T>(resource: AccountResource, page = 1, archived = false) {
+export type AccountResource = 'accounts' | 'account-groups' | 'expense-categories'
+export function getAccountPage<T>(
+  resource: AccountResource,
+  page = 1,
+  archived: boolean | 'all' = false,
+) {
   return apiRequest<RecordPage<T>>(`${resource}/?page=${page}&archived=${archived}`)
 }
 // Group digit strings directly: Number would lose cents on larger valid amounts.

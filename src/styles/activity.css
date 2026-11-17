@@ -1,0 +1,226 @@
+.activity-page {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+}
+.activity-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.activity-page-heading > div {
+  min-width: 0;
+}
+.activity-add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.activity-add-actions > button {
+  width: auto;
+  margin: 0;
+}
+.activity-filter-panel {
+  margin-bottom: 24px;
+}
+.activity-filter-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+}
+.activity-filter-panel summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+.activity-filter-fields,
+.transaction-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+.activity-filter-fields .form-field,
+.transaction-fields .form-field {
+  margin: 0;
+  min-width: 0;
+}
+.activity-filter-actions {
+  margin-top: 20px;
+}
+.transaction-editor {
+  margin: 24px auto 0;
+  max-width: 760px;
+}
+.transaction-editor h2 {
+  margin: 0 0 12px;
+  font-size: 24px;
+}
+.transaction-editor > .field-help {
+  max-width: 64ch;
+}
+.transaction-account-context {
+  margin-block: 24px;
+  padding: 16px;
+  border-inline-start: 2px solid var(--accent);
+  background: var(--secondary);
+  border-radius: var(--radius-control);
+}
+.transaction-account-context p {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.transaction-account-context bdi {
+  font-variant-numeric: tabular-nums;
+}
+.transaction-editor textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 100px;
+  background: var(--input);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 14px 16px;
+  font: inherit;
+  font-size: 16px;
+}
+.transaction-editor textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.transaction-editor textarea[aria-invalid='true'] {
+  border-color: var(--error);
+}
+.transaction-editor input[type='date'],
+.activity-filter-fields input[type='date'] {
+  min-width: 0;
+  width: 100%;
+  min-height: 50px;
+}
+.transaction-editor input[type='date']::-webkit-date-and-time-value,
+.activity-filter-fields input[type='date']::-webkit-date-and-time-value {
+  text-align: start;
+}
+.transaction-list {
+  list-style: none;
+  margin: 0;
+  padding-block: 0;
+}
+.transaction-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(160px, auto);
+  gap: 16px;
+  align-items: start;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+.transaction-row:last-child {
+  border-bottom: 0;
+}
+.transaction-direction {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--secondary);
+  border-radius: 50%;
+}
+.transaction-income {
+  color: var(--accent);
+}
+.transaction-expense {
+  color: var(--ink);
+}
+.transaction-description {
+  min-width: 0;
+}
+.transaction-description h2 {
+  font-size: 17px;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.transaction-description p {
+  font-size: 14px;
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+.transaction-description time {
+  font-size: 13px;
+  color: var(--muted);
+}
+.transaction-note {
+  white-space: pre-wrap;
+  color: var(--muted);
+}
+.transaction-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.transaction-value bdi {
+  font-size: 22px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-align: end;
+  max-width: 100%;
+}
+.transaction-row-actions {
+  grid-column: 2 / -1;
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+}
+.transaction-row-actions .text-button {
+  min-height: 44px;
+  padding: 10px 8px;
+}
+.transaction-confirmation {
+  margin-top: 24px;
+  max-width: 680px;
+}
+.transaction-confirmation p {
+  overflow-wrap: anywhere;
+}
+.activity-opening-note {
+  margin-top: 24px;
+}
+@media (max-width: 680px) {
+  .activity-add-actions > button {
+    flex: 1;
+    min-width: 120px;
+  }
+  .activity-filter-fields,
+  .transaction-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .transaction-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .transaction-direction {
+    width: 32px;
+    height: 32px;
+  }
+  .transaction-value {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+  }
+  .transaction-value bdi {
+    text-align: start;
+    font-size: clamp(17px, 4.5vw, 21px);
+  }
+  .transaction-row-actions {
+    grid-column: 1 / -1;
+  }
+  .transaction-row-actions > button {
+    flex: 1;
+  }
+}
