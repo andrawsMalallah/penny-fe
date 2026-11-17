@@ -1,0 +1,56 @@
+import { computed } from 'vue'
+import { language } from './preferences'
+
+const english = {
+  overview: 'Overview',
+  navigation: 'Main navigation',
+  general: 'General',
+  generalHelp: 'Language, appearance and money preferences.',
+  securityHelp: 'Protect your account with two-factor authentication.',
+  devicesHelp: 'Review where you are signed in.',
+  greeting: 'Hello, {name}',
+  overviewHelp: 'A clearer picture of the money you hold.',
+  accountPreview: 'Your accounts',
+  viewAccounts: 'View all accounts',
+  overviewNote:
+    'Current balances are shown separately in IQD and USD. Opening money is not income.',
+  noAccounts: 'Make room for your money',
+  noAccountsHelp: 'Add your first account and enter the money already in it.',
+  loading: 'Loading your accounts…',
+  loadError: 'Your accounts could not be loaded. Try again.',
+  accountCount: '{count} active accounts',
+  accountSettings: 'Manage your preferences',
+  showPassword: 'Show password',
+  hidePassword: 'Hide password',
+  tagline: 'Your money, simplified.',
+  heroBody: 'Keep your accounts organized. See each currency clearly. Make space for what matters.',
+  settingsMenu: 'Settings sections',
+  themeReady: 'Your workspace, your way',
+}
+const arabic: typeof english = {
+  overview: 'نظرة عامة',
+  navigation: 'التنقل الرئيسي',
+  general: 'عام',
+  generalHelp: 'اللغة والمظهر وتفضيلات الأموال.',
+  securityHelp: 'احمِ حسابك باستخدام المصادقة الثنائية.',
+  devicesHelp: 'راجع الأجهزة المسجّل دخولك عليها.',
+  greeting: 'مرحبًا، {name}',
+  overviewHelp: 'صورة أوضح للأموال التي تملكها.',
+  accountPreview: 'حساباتك',
+  viewAccounts: 'عرض جميع الحسابات',
+  overviewNote:
+    'تُعرض الأرصدة الحالية للدينار والدولار بشكل منفصل. الأموال الافتتاحية لا تُحتسب دخلًا.',
+  noAccounts: 'ابدأ بتنظيم أموالك',
+  noAccountsHelp: 'أضف حسابك الأول وأدخل الأموال الموجودة فيه حاليًا.',
+  loading: 'جارٍ تحميل حساباتك…',
+  loadError: 'تعذّر تحميل حساباتك. أعد المحاولة.',
+  accountCount: '{count} حسابات نشطة',
+  accountSettings: 'إدارة تفضيلاتك',
+  showPassword: 'إظهار كلمة المرور',
+  hidePassword: 'إخفاء كلمة المرور',
+  tagline: 'أموالك، ببساطة.',
+  heroBody: 'نظّم حساباتك. تابع كل عملة بوضوح. وامنح ما يهمك مساحة أكبر.',
+  settingsMenu: 'أقسام الإعدادات',
+  themeReady: 'مساحتك، كما تحب',
+}
+export const designCopy = computed(() => (language.value === 'ar' ? arabic : english))

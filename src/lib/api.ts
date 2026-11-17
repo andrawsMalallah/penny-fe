@@ -19,6 +19,7 @@ export function getSessionState(): Promise<SessionState> {
 }
 
 export interface UserSettings {
+  default_account: number | null
   language: 'en' | 'ar'
   default_currency: '' | 'IQD' | 'USD'
   exchange_rate: string | null
@@ -102,6 +103,11 @@ function safeFields(payload: unknown): Record<string, string[]> {
     'language',
     'default_currency',
     'exchange_rate',
+    'default_account',
+    'name',
+    'group',
+    'opening_iqd',
+    'opening_usd',
   ]) {
     const messages = (payload as Record<string, unknown>)[field]
     if (Array.isArray(messages) && messages.every((message) => typeof message === 'string')) {

@@ -1,6 +1,16 @@
 # Penny frontend
 
-Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Financial account setup and analytics are pending.
+Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups and opening balances are implemented; financial transactions and analytics are pending.
+
+## Accounts
+
+Authenticated workspace navigation includes lazy-loaded `#/accounts`. It supports money accounts, optional account groups, exact separate IQD/USD opening money, name/group edits, retained opening details and confirmed archive/restore. Settings includes an optional spending-default selector and link to Accounts. The initial-avatar menu still contains only Settings and Sign out.
+
+AccountEditor separates form markup from AccountsPage coordination. AccountSelect and PageControls share bounded, fresh API selection/pagination, including current selections outside the visible page. No financial records are persisted in browser storage. Amount display groups decimal strings without converting to floating point. Copy is in `src/lib/accountCopy.ts`, styles in `src/styles/accounts.css`.
+
+Current balances equal opening money; transactions, corrections, debts, targets and analytics are future work. Archiving retains money and clears the default; restoration does not automatically choose it again. A group with active accounts must be emptied/archived first. Opening amounts are recorded once at account creation.
+
+Local verification: 52 tests plus lint/format/typecheck/production build; local simulated-API Chrome review of EN/AR, light/dark, 320px through desktop, validation, empty/error/retry, archive/restore and stale-CSRF behavior. Real-device acceptance remains pending. Browser tooling/artifacts stay outside this repository and CI.
 
 ## Development
 
@@ -19,6 +29,12 @@ API requests fetch fresh data with no-store; financial data must not be cached i
 
 ## Design and review
 
+Dark appearance uses a blue-charcoal canvas (`#080F14`), sidebar (`#0A1217`), header/bottom bar (`#0C171C`), raised cards (`#101B20`/`#152328`), emerald actions (`#087A49`) and mint accents (`#60DA9A`). Semantic tokens live in `theme.css`; the existing Light palette is retained. System follows the OS, and a small early HTML bootstrap applies appearance before first paint. Browser chrome updates with the selected appearance. No extra theme store or dependency is used.
+
+The authenticated shell has a persistent sidebar at 1024px and above (236px wide; 208px on smaller desktops), with Overview, Accounts and Settings on every page. Below 1024px those same destinations move into a safe-area-aware bottom navigation; content/footer have reserved clearance. Guests have no authenticated navigation. `WorkspaceNavigation.vue`, `BrandWave.vue` and `OverviewPage.vue` share the visual language with the existing controls. `workspace.css` owns responsive shell/panel styling. Settings uses an inner desktop menu and a tappable phone section list. Its existing settings/security APIs and save semantics are preserved.
+
+Overview reads one bounded page of current accounts and previews up to four, showing the server's total active-account count. It never presents partial-page amounts as aggregate money totals. Unsupported activity, analytics, notifications, search and OAuth controls are omitted. All decorative art is authored locally in SVG; the approved logo and existing font stacks are preserved.
+
 The shell renders one shared AppFooter after main on every guest and authenticated page. It reuses the existing GuestFooter.vue file through the AppFooter import alias and shows @ Aether with the automatically computed year. The viewport-height flex shell and footer's automatic top margin keep it at the bottom of short pages, after content on long pages, without a fixed overlay. Check guest Home, authenticated Home, Settings and Devices when reviewing footer placement.
 
 `App.vue` is the page shell. `AppHeader.vue` shows a circular user initial matching the 34px logo, with an accessible 44px account-menu button and no visible name/arrow. Its dropdown contains Settings and Sign out. `AuthFlow.vue` coordinates credential, verification, recovery and second-factor sign-in; `useWorkspaceSession.ts` owns authenticated identity/logout. `SettingsPage.vue` and the authenticated legacy `PreferencesPage.vue` remain lazy-loaded. `GuestFooter.vue` shows only @ Aether and the current year from the client's clock. `PreferenceControls.vue` serves authenticated settings only. `SelectControl.vue` retains native select behavior with a consistently inset SVG chevron, and `BackButton.vue`/`RefreshButton.vue` share secondary-action styling through `ControlIcon.vue`. Device-list refresh is an accessible circular-arrows icon beside the heading. Security Back actions are at the top; recovery-code screens still require acknowledging that codes have been saved. `AuthInput.vue` reuses accessible fields, `FactorCodeInput.vue` shares authenticator/recovery inputs and `useAuthFeedback.ts` shares translated error handling.
@@ -29,7 +45,9 @@ Navigation uses hash URLs (`#/`, `#/settings`, `#/preferences`) with browser Bac
 
 Settings acceptance on phone: open the circular initial menu, choose Settings, change language/theme, choose IQD/USD, enter a positive rate and Save settings. Reload and verify the saved account choices and absence of a heading highlight. Clear the rate and save again; test zero/negative/over-precision input. Open 2FA and signed-in devices from Security and return with Back. Test dropdown keyboard focus, Escape/outside dismissal, browser Back/Forward, Arabic RTL, both themes and signed-out preferences. Default spending account follows financial account creation.
 
-Responsive layouts cover phone/landscape/tablet/desktop, safe areas, 16px minimum input text, touch-sized fields, keyboard focus, validation and explicit loading/errors. Arabic mirrors directional layout while preserving number/currency ordering. The illustrative balance panel is labeled Example and does not represent user funds. Successful authentication shows the actual profile and explains that account setup is next.
+Responsive layouts cover phone/landscape/tablet/desktop, safe areas, 16px minimum input text, touch-sized fields, keyboard focus, validation and explicit loading/errors. Arabic mirrors directional layout while preserving number/currency ordering. The old illustrative ledger and obsolete welcome component/copy were removed. Successful authentication now shows the real account Overview. Password visibility controls are explicit user actions and do not change authentication requests.
+
+The final local fixture review passed 552 screen checks: eight widths (320/360/390/430/768/1024/1280/1440), EN/AR and Light/Dark, plus short/landscape viewports. It exercises registration, recovery, pending-factor login, recovery-code login, 2FA setup/one-time recovery display, settings persistence, accounts/groups/archive/restore, errors, confirmation/cancel and sign-out-all. QR rendering used public layout fixtures; actual scanning and real-phone keyboard/safe-area acceptance remain manual. A Node/Vitest `--localstorage-file` warning is present; tests still pass. No browser tests/tooling are added to deployment or CI.
 
 The approved logo is `public/logo.svg`. Font stacks use installed Plus Jakarta Sans/Noto Sans Arabic/Cairo and system fallbacks; bundled licensed fonts are pending.
 

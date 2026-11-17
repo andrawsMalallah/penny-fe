@@ -1,9 +1,30 @@
 <script setup lang="ts">
 defineProps<{
-  name: 'chevron' | 'back' | 'refresh' | 'settings' | 'logout'
+  name:
+    | 'chevron'
+    | 'back'
+    | 'refresh'
+    | 'settings'
+    | 'logout'
+    | 'home'
+    | 'wallet'
+    | 'shield'
+    | 'devices'
+    | 'eye'
+    | 'eyeOff'
 }>()
 
 const paths = {
+  home: ['m3 10 9-7 9 7', 'M5 9v12h14V9', 'M9 21v-8h6v8'],
+  wallet: ['M20 7H5a2 2 0 0 1 0-4h13v4', 'M5 7H3v14h18V7Z', 'M21 11h-6v6h6', 'M17 14h1'],
+  shield: ['M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7Z', 'm8 12 3 3 5-6'],
+  devices: ['M3 4h18v13H3Z', 'M8 21h8', 'M12 17v4'],
+  eye: ['M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z', 'M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'],
+  eyeOff: [
+    'm3 3 18 18',
+    'M10 5a12 12 0 0 1 2 0c7 0 10 7 10 7a18 18 0 0 1-4 5',
+    'M6 6a19 19 0 0 0-4 6s3 7 10 7a12 12 0 0 0 5-1',
+  ],
   chevron: ['m6 9 6 6 6-6'],
   back: ['m12 5-7 7 7 7', 'M5 12h14'],
   refresh: [

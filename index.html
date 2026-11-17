@@ -2,11 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0e7051" />
     <meta name="description" content="Penny — a clearer picture of your money." />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <title>Penny</title>
+    <script>
+      // Resolve appearance before the stylesheet/SPA can paint the first screen.
+      try {
+        const stored = localStorage.getItem('penny.appearance')
+        document.documentElement.dataset.theme =
+          stored === 'dark' || stored === 'light'
+            ? stored
+            : matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+      } catch {
+        document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light'
+      }
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute(
+          'content',
+          document.documentElement.dataset.theme === 'dark' ? '#0c171c' : '#0e7051',
+        )
+    </script>
   </head>
   <body>
     <div id="app"></div>

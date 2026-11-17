@@ -25,6 +25,12 @@ export function initializePreferences(): void {
     document.documentElement.dir = language.value === 'ar' ? 'rtl' : 'ltr'
     document.documentElement.dataset.theme =
       appearance.value === 'system' ? (media.matches ? 'dark' : 'light') : appearance.value
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute(
+        'content',
+        document.documentElement.dataset.theme === 'dark' ? '#0c171c' : '#0e7051',
+      )
     try {
       localStorage.setItem('penny.language', language.value)
       localStorage.setItem('penny.appearance', appearance.value)

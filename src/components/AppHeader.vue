@@ -4,7 +4,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { User } from '../lib/api'
 import ControlIcon from './ControlIcon.vue'
 
-defineProps<{ user: User | null; busy: boolean }>()
+defineProps<{ user: User | null; busy: boolean; title?: string }>()
 const emit = defineEmits<{ settings: []; logout: []; home: [] }>()
 const open = ref(false)
 const container = ref<HTMLElement | null>(null)
@@ -30,10 +30,11 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', outside))
 </script>
 
 <template>
-  <header class="site-header">
+  <header class="site-header" :class="{ 'authenticated-header': user }">
     <a class="brand" href="#/" aria-label="Penny" @click="emit('home')">
       <img src="/logo.svg" width="34" height="34" alt="" /><span>Penny</span>
     </a>
+    <span v-if="user" class="header-page-title">{{ title }}</span>
     <div
       v-if="user"
       ref="container"

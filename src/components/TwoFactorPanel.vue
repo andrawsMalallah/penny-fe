@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div :aria-busy="busy">
+  <div class="two-factor-panel" :aria-busy="busy">
     <BackButton
       v-if="step === 'status'"
       :disabled="busy"
@@ -196,23 +196,29 @@ onBeforeUnmount(() => {
     <template v-else>
       <form @submit.prevent="submit">
         <template v-if="step === 'setup' && setup">
-          <p>{{ copy.factorScan }}</p>
-          <img
-            class="factor-qr"
-            :src="setup.qr_code"
-            :alt="copy.factorQrAlt"
-            width="240"
-            height="240"
-          />
-          <p class="form-note">{{ copy.factorManual }}</p>
-          <div class="factor-key">
-            <div class="factor-key-heading">
-              <strong>{{ copy.factorKey }}</strong>
-              <CopyButton :text="setup.secret" :label="copy.copySetupKey" :disabled="busy" />
+          <div class="factor-setup-grid">
+            <div class="factor-scan-section">
+              <p>{{ copy.factorScan }}</p>
+              <img
+                class="factor-qr"
+                :src="setup.qr_code"
+                :alt="copy.factorQrAlt"
+                width="240"
+                height="240"
+              />
             </div>
-            <code dir="ltr">{{ setup.secret }}</code>
+            <div class="factor-manual-section">
+              <p class="form-note">{{ copy.factorManual }}</p>
+              <div class="factor-key">
+                <div class="factor-key-heading">
+                  <strong>{{ copy.factorKey }}</strong>
+                  <CopyButton :text="setup.secret" :label="copy.copySetupKey" :disabled="busy" />
+                </div>
+                <code dir="ltr">{{ setup.secret }}</code>
+              </div>
+              <p class="form-note">{{ copy.factorSetupExpiry }}</p>
+            </div>
           </div>
-          <p class="form-note">{{ copy.factorSetupExpiry }}</p>
         </template>
         <p v-if="step === 'replace'">{{ copy.factorReplaceNote }}</p>
         <p v-else-if="step === 'disable'">{{ copy.factorDisableNote }}</p>
@@ -269,14 +275,14 @@ onBeforeUnmount(() => {
   background: #fff;
   padding: 12px;
   margin: 24px auto;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
 }
 .factor-key {
   margin-top: 12px;
   padding: 16px;
   background: var(--secondary);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
 }
 .factor-key strong {
   font-size: 12px;
@@ -309,7 +315,7 @@ onBeforeUnmount(() => {
   list-style: none;
   padding: 16px;
   background: var(--secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;

@@ -8,6 +8,7 @@ import { useAuthFeedback } from '../lib/useAuthFeedback'
 import PrimaryButton from './PrimaryButton.vue'
 import BackButton from './BackButton.vue'
 import RefreshButton from './RefreshButton.vue'
+import ControlIcon from './ControlIcon.vue'
 
 const emit = defineEmits<{ back: []; signedOut: []; expired: [] }>()
 const page = ref(1)
@@ -131,7 +132,13 @@ onMounted(async () => {
       <p v-if="loading" role="status">{{ copy.loading }}</p>
       <template v-else-if="sessions">
         <ul v-if="sessions.results.length" class="session-list" :aria-label="copy.sessionsTitle">
-          <li v-for="(session, index) in sessions.results" :key="index" class="session-row">
+          <li
+            v-for="(session, index) in sessions.results"
+            :key="index"
+            class="session-row"
+            :class="{ 'session-row-current': session.is_current }"
+          >
+            <span class="feature-icon session-device-icon"><ControlIcon name="devices" /></span>
             <div class="session-device">
               <strong
                 ><bdi>{{
@@ -257,13 +264,13 @@ onMounted(async () => {
   padding: 12px 16px;
   background: var(--card);
   border: 1px solid var(--error);
-  border-radius: 8px;
+  border-radius: var(--radius-control);
   color: var(--error);
 }
 .session-confirmation {
   background: var(--secondary);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-control);
 }
 .session-confirmation h3 {
   margin-top: 0;
