@@ -1,6 +1,28 @@
 # Penny frontend
 
-Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups, opening balances, expense categories, income/expense Activity, transfers and currency exchanges are implemented. Debts and analytics remain pending.
+Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups, opening balances, categories, Activity, transfers, exchanges, debts, repayments and account targets are implemented. Analytics remains pending.
+
+## Account targets
+
+Accounts → Add/Edit account has optional independent IQD/USD targets. Enter positive two-decimal amounts; leave a field empty to remove that target. Target cards display the current balance, goal and exact remaining amount; progress bars stop at 100% and show Target reached at or above the goal. Progress follows the current currency balance, so spending/corrections can lower it again. Targets never reserve money or limit spending. Accounts without goals stay uncluttered; archives retain their goals.
+
+Shared AccountTarget and exact BigInt cents calculations avoid floating-point money. Saves include the read target version; a 409 asks the user to cancel/refresh/reopen, with no automatic mutation replay. Recognized target validation errors reach their fields. Fresh account API reads drive progress; no financial browser storage, packages or navigation destinations were added.
+
+Local verification: 94 frontend tests plus lint/format/typechecked production build; 48 target responsive screens and existing Accounts regression checks (32 screens) in EN/AR, Light/Dark, phone/tablet/desktop, with actual screenshots inspected. Target interactions cover create/edit/remove, maximum precision, validation, conflict, stale CSRF without replay, refreshed balance decline, Cancel focus, archive retention and guests. Existing non-failing Node/Vitest localStorage warning remains. Browser checks stay local outside CI. On a phone, edit both targets, remove one, verify progress/reached status against balances, and recheck after a money change; also try Arabic and both themes.
+
+## Debts and repayments
+
+Authenticated `#/debts` is lazy-loaded and appears consistently in the desktop sidebar and five-item phone navigation. Lists group the current bounded page by person with independent direction/currency/remaining amounts; there are no partial-page totals or netting. Explicit Apply/Clear filters cover person, direction, currency and outstanding/settled/all status. People and repayment histories are paginated too. Existing debts record the original date without moving money; new lending/borrowing links an explicitly selected account and updates its balance.
+
+Debt detail shows original, repaid and remaining amounts plus repayment history. Add/edit debt and repayment panels are lazy-loaded, share DebtEntryFields and existing transaction-editor styles, and preserve English/Arabic, exact string money, local-today fixed dates, account context/readiness/retry and keyboard focus. No spending account/currency defaults are silently applied. Person selection supports bounded existing choices or a new trimmed name. Repayments use the debt's fixed currency; the account label explicitly says pay from or receive into.
+
+Editing/deletion is guarded by last-read versions, and create drafts retain a memory-only UUID for explicit retries. Repayment mutations refresh detail/history and debt versions. Corrections cannot reduce a debt below its repayments; remove repayments before changing debt currency/direction or deleting the debt. All linked money changes must preserve historical account balances. Confirmed deletion keeps the confirmation visible on failure. No financial records or drafts are persisted in browser storage; no automatic mutation replay.
+
+Activity shows linked debt cash rows and safe person/role labels, with a **Manage in Debts** deep link (`#/debts/<id>`) instead of generic edit/delete controls. The backend enforces that separation. Guests cannot open private debt screens. Main navigation, browser routing, direct links and Cancel/Back focus are covered locally.
+
+Current verification: **90 frontend tests**, lint/format/typechecked production build pass; **15 date/debt tests** also pass under America/Los_Angeles. Public-fixture lifecycle/error/retry checks and **144 debt responsive screen checks** pass across EN/AR, Light/Dark and 320/390/768/844 landscape/1024/1440. Existing Activity/transfer/exchange suites contribute another **240 responsive checks** plus interactions. Real screenshots inspected in all four language/theme combinations including 320px. Browser testing/artifacts stay local outside the repo/CI. Existing non-failing Node/Vitest localStorage warning remains. Physical-device acceptance is manual.
+
+Manual acceptance on phone/desktop: add an existing old debt and verify cash stays unchanged; record new lending and borrowing and check the correct account movement. Add partial/full repayments, check remaining amounts and one person with separate IQD/USD debts. Edit and cancel/confirm deletion; test overpayment, old/future dates, changing currency with repayments, and deleting supporting cash that was spent. Open linked Activity → Manage in Debts, then check filters/pagination, English/Arabic, System/Light/Dark, portrait/landscape, keyboard/calendar/zoom and five-tab touch targets.
 
 ## Currency exchanges
 
@@ -52,7 +74,7 @@ Authenticated workspace navigation includes lazy-loaded `#/accounts`. It support
 
 AccountEditor separates form markup from AccountsPage coordination. AccountSelect and PageControls share bounded, fresh API selection/pagination, including current selections outside the visible page. No financial records are persisted in browser storage. Amount display groups decimal strings without converting to floating point. Copy is in `src/lib/accountCopy.ts`, styles in `src/styles/accounts.css`.
 
-Current balances include opening money, live income/expenses, transfers and both exchange legs. Income/expense/transfer/exchange corrections are supported; debts, targets and analytics remain future work. Archiving retains money and clears the default; restoration does not automatically choose it again. A group with active accounts must be emptied/archived first. Opening amounts and dates are fixed at creation; existing opening dates are populated by the reviewed backend migration.
+Current balances include opening money, income/expenses, transfers, exchanges and actual debt cash movements. Income/expense/transfer/exchange/debt corrections are supported; targets and analytics remain future work. Archiving retains money and clears the default; restoration does not automatically choose it again. A group with active accounts must be emptied/archived first. Opening amounts and dates are fixed at creation; existing opening dates are populated by the reviewed backend migration.
 
 Local verification: 52 tests plus lint/format/typecheck/production build; local simulated-API Chrome review of EN/AR, light/dark, 320px through desktop, validation, empty/error/retry, archive/restore and stale-CSRF behavior. Real-device acceptance remains pending. Browser tooling/artifacts stay outside this repository and CI.
 

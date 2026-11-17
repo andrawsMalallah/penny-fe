@@ -11,6 +11,9 @@ export interface MoneyAccount extends AccountGroup {
   created_at: string
   balance_iqd: string
   balance_usd: string
+  target_iqd?: string | null
+  target_usd?: string | null
+  target_version?: number
   opening: { iqd: string; usd: string; recorded_at: string; effective_date?: string }
 }
 export interface AccountValues {
@@ -19,6 +22,9 @@ export interface AccountValues {
   opening_iqd?: string
   opening_usd?: string
   timezone?: string
+  target_iqd?: string | null
+  target_usd?: string | null
+  target_version?: number
 }
 export interface RecordPage<T> {
   count: number
@@ -26,7 +32,7 @@ export interface RecordPage<T> {
   previous: string | null
   results: T[]
 }
-export type AccountResource = 'accounts' | 'account-groups' | 'expense-categories'
+export type AccountResource = 'accounts' | 'account-groups' | 'expense-categories' | 'debt-people'
 export function getAccountPage<T>(
   resource: AccountResource,
   page = 1,

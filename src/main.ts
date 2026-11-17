@@ -5,6 +5,7 @@ import './styles/app.css'
 import './styles/accounts.css'
 import './styles/categories.css'
 import './styles/activity.css'
+import './styles/debts.css'
 import './styles/workspace.css'
 
 createApp(App).mount('#app')

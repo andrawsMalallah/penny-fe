@@ -108,6 +108,10 @@ function safeFields(payload: unknown): Record<string, string[]> {
     'name_en',
     'name_ar',
     'account',
+    'person',
+    'person_name',
+    'direction',
+    'origin',
     'destination',
     'category',
     'kind',
@@ -121,6 +125,9 @@ function safeFields(payload: unknown): Record<string, string[]> {
     'group',
     'opening_iqd',
     'opening_usd',
+    'target_iqd',
+    'target_usd',
+    'target_version',
   ]) {
     const messages = (payload as Record<string, unknown>)[field]
     if (Array.isArray(messages) && messages.every((message) => typeof message === 'string')) {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ActivityFilters } from '../lib/transactions'
 import { activityCopy as text } from '../lib/activityCopy'
+import { debtCopy } from '../lib/debtCopy'
 import AccountSelect from './AccountSelect.vue'
 import SelectControl from './SelectControl.vue'
 import FormField from './FormField.vue'
@@ -34,7 +35,9 @@ function fieldError(field: string): string | undefined {
             <option value="income">{{ text.income }}</option>
             <option value="expense">{{ text.expense }}</option>
             <option value="transfer">{{ text.transfer }}</option>
-            <option value="exchange">{{ text.exchange }}</option></SelectControl
+            <option value="exchange">{{ text.exchange }}</option>
+            <option value="debt_in">{{ debtCopy.debt_in }}</option>
+            <option value="debt_out">{{ debtCopy.debt_out }}</option></SelectControl
           ></FormField
         >
         <FormField id="activity-currency" :label="text.currency" :error="fieldError('currency')"

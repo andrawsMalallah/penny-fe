@@ -162,6 +162,78 @@
   text-align: start;
   overflow-wrap: anywhere;
 }
+.account-targets {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.account-target {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.target-heading {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.target-status {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.target-reached .target-status {
+  color: var(--accent);
+}
+.target-amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  margin: 12px 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.target-amounts bdi,
+.target-remaining bdi {
+  overflow-wrap: anywhere;
+}
+.target-amounts > span,
+.target-remaining {
+  color: var(--muted);
+}
+.target-remaining {
+  margin: 10px 0 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.account-target progress {
+  display: block;
+  appearance: none;
+  width: 100%;
+  height: 7px;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--line);
+  color: var(--accent);
+  accent-color: var(--accent);
+}
+.account-target progress::-webkit-progress-bar {
+  background: var(--line);
+}
+.account-target progress::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 8px;
+}
+.account-target progress::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: 8px;
+}
 .account-opening {
   grid-column: 1 / -1;
   color: var(--muted);
@@ -269,6 +341,10 @@
   margin: 0;
 }
 @media (max-width: 680px) {
+  .account-targets {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
   .accounts-heading {
     display: block;
     margin-bottom: 24px;

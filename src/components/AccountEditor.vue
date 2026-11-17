@@ -24,6 +24,10 @@ const group = ref(
 )
 const openingIqd = ref('0.00')
 const openingUsd = ref('0.00')
+const targets = ref({
+  IQD: props.item && 'balance_iqd' in props.item ? (props.item.target_iqd ?? '') : '',
+  USD: props.item && 'balance_usd' in props.item ? (props.item.target_usd ?? '') : '',
+})
 const heading = ref<HTMLElement | null>(null)
 function save(): void {
   emit(
@@ -33,6 +37,11 @@ function save(): void {
       : {
           name: name.value.trim(),
           group: group.value ? Number(group.value) : null,
+          target_iqd: targets.value.IQD.trim() || null,
+          target_usd: targets.value.USD.trim() || null,
+          ...(props.item && 'balance_iqd' in props.item
+            ? { target_version: props.item.target_version ?? 1 }
+            : {}),
           ...(props.item
             ? {}
             : {
@@ -110,6 +119,33 @@ onMounted(() => heading.value?.focus())
                 type="text"
                 maxlength="19"
                 required
+                autocomplete="off"
+                :aria-invalid="invalid"
+                :aria-describedby="describedBy"
+              />
+            </template>
+          </FormField>
+        </div>
+      </fieldset>
+      <fieldset v-if="!groups" class="opening-fields" :disabled="busy">
+        <legend>{{ text.targets }}</legend>
+        <p class="field-help">{{ text.targetsHelp }}</p>
+        <div class="money-inputs">
+          <FormField
+            v-for="currency in ['IQD', 'USD'] as const"
+            :id="`target-${currency}`"
+            :key="currency"
+            :label="`${text.target} · ${currency}`"
+            :error="fields[currency === 'IQD' ? 'target_iqd' : 'target_usd']"
+          >
+            <template #default="{ describedBy, invalid }">
+              <input
+                :id="`target-${currency}`"
+                v-model="targets[currency]"
+                dir="ltr"
+                inputmode="decimal"
+                type="text"
+                maxlength="19"
                 autocomplete="off"
                 :aria-invalid="invalid"
                 :aria-describedby="describedBy"

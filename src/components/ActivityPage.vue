@@ -7,6 +7,7 @@ import { activityCopy as text } from '../lib/activityCopy'
 import { accountCopy } from '../lib/accountCopy'
 import { language } from '../lib/preferences'
 import { receivedCurrency } from '../lib/exchanges'
+import { debtCopy } from '../lib/debtCopy'
 import {
   dateLabel,
   getTransactions,
@@ -54,6 +55,9 @@ let requestId = ''
 function clearError(): void {
   conflict.value = false
   clearErrors()
+}
+function kindLabel(value: TransactionKind): string {
+  return value === 'debt_in' || value === 'debt_out' ? debtCopy.value[value] : text.value[value]
 }
 async function handleError(cause: unknown): Promise<void> {
   if (cause instanceof ApiError && cause.status === 403) {
@@ -103,6 +107,7 @@ async function edit(
   selectedKind: TransactionKind,
   event: Event,
 ): Promise<void> {
+  if (record?.debt) return
   if (busy.value) return
   triggerId = (event.currentTarget as HTMLElement).id
   busy.value = true
@@ -240,7 +245,7 @@ onMounted(async () => {
         {{ text.deleteTitle }}
       </h2>
       <p class="confirmation-name">
-        {{ text[confirmation.kind] }} ·
+        {{ kindLabel(confirmation.kind) }} ·
         <bdi>{{ formatMoney(confirmation.amount) }} {{ confirmation.currency }}</bdi>
       </p>
       <p dir="auto">{{ confirmation.account_name }}</p>
@@ -330,7 +335,7 @@ onMounted(async () => {
           /></span>
           <div class="transaction-description">
             <h2>
-              {{ text[record.kind]
+              {{ kindLabel(record.kind)
               }}<span v-if="record.category">
                 ·
                 {{
@@ -352,6 +357,7 @@ onMounted(async () => {
               <span v-if="record.destination_archived"> ({{ text.archived }})</span>
             </p>
             <time :datetime="record.date">{{ dateLabel(record.date, language) }}</time>
+            <p v-if="record.debt" dir="auto">{{ record.debt_person_name }}</p>
             <p v-if="record.exchange_rate">
               <bdi>1 USD = {{ record.exchange_rate }} IQD</bdi>
             </p>
@@ -359,7 +365,12 @@ onMounted(async () => {
           </div>
           <div class="transaction-value" :class="`transaction-${record.kind}`">
             <bdi
-              >{{ record.kind === 'transfer' ? '' : record.kind === 'income' ? '+' : '−'
+              >{{
+                record.kind === 'transfer'
+                  ? ''
+                  : record.kind === 'income' || record.kind === 'debt_in'
+                    ? '+'
+                    : '−'
               }}{{ formatMoney(record.amount) }}</bdi
             ><span class="currency-badge">{{ record.currency }}</span>
             <template v-if="record.kind === 'exchange' && record.received_amount">
@@ -368,24 +379,29 @@ onMounted(async () => {
             </template>
           </div>
           <div class="transaction-row-actions">
-            <button
-              :id="`edit-transaction-${record.id}`"
-              type="button"
-              class="secondary-button"
-              :disabled="busy"
-              :aria-label="`${accountCopy.edit}: ${record.account_name}, ${record.amount} ${record.currency}`"
-              @click="edit(record, record.kind, $event)"
-            >
-              {{ accountCopy.edit }}</button><button
-              :id="`delete-transaction-${record.id}`"
-              type="button"
-              class="text-button"
-              :disabled="busy"
-              :aria-label="`${text.delete}: ${record.account_name}, ${record.amount} ${record.currency}`"
-              @click="confirm(record, $event)"
-            >
-              {{ text.delete }}
-            </button>
+            <a v-if="record.debt" class="secondary-button" :href="`#/debts/${record.debt}`">{{
+              debtCopy.manage
+            }}</a>
+            <template v-else>
+              <button
+                :id="`edit-transaction-${record.id}`"
+                type="button"
+                class="secondary-button"
+                :disabled="busy"
+                :aria-label="`${accountCopy.edit}: ${record.account_name}, ${record.amount} ${record.currency}`"
+                @click="edit(record, record.kind, $event)"
+              >
+                {{ accountCopy.edit }}</button><button
+                :id="`delete-transaction-${record.id}`"
+                type="button"
+                class="text-button"
+                :disabled="busy"
+                :aria-label="`${text.delete}: ${record.account_name}, ${record.amount} ${record.currency}`"
+                @click="confirm(record, $event)"
+              >
+                {{ text.delete }}
+              </button>
+            </template>
           </div>
         </li>
       </ul>

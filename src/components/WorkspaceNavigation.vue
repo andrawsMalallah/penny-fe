@@ -4,6 +4,7 @@ import { designCopy as text } from '../lib/designCopy'
 import { accountCopy } from '../lib/accountCopy'
 import { copy } from '../lib/copy'
 import { activityCopy } from '../lib/activityCopy'
+import { debtCopy } from '../lib/debtCopy'
 import ControlIcon from './ControlIcon.vue'
 defineProps<{ page: Page }>()
 const emit = defineEmits<{ navigate: [page: Page] }>()
@@ -31,6 +32,12 @@ const emit = defineEmits<{ navigate: [page: Page] }>()
         :aria-current="page === 'activity' ? 'page' : undefined"
         @click.prevent="emit('navigate', 'activity')"
         ><ControlIcon name="activity" /><span>{{ activityCopy.title }}</span></a
+      >
+      <a
+        href="#/debts"
+        :aria-current="page === 'debts' ? 'page' : undefined"
+        @click.prevent="emit('navigate', 'debts')"
+        ><ControlIcon name="debts" /><span>{{ debtCopy.title }}</span></a
       >
       <a
         href="#/settings"

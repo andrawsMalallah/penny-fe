@@ -515,7 +515,7 @@
 }
 @media (max-width: 1023px) {
   .authenticated-shell {
-    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
   .workspace-navigation {
     position: fixed;
@@ -533,16 +533,19 @@
   }
   .workspace-destinations {
     flex-direction: row;
-    gap: 8px;
+    gap: 4px;
     padding: 0;
   }
   .workspace-destinations > a {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     flex-direction: column;
     gap: 3px;
-    padding: 7px 6px;
+    padding: 7px 2px;
     min-height: 58px;
     font-size: 12px;
+    text-align: center;
+    overflow-wrap: anywhere;
   }
   .workspace-destinations > .navigation-settings {
     margin: 0;
@@ -555,6 +558,11 @@
   }
   .overview-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 360px) {
+  .workspace-destinations > a {
+    font-size: 11px;
   }
 }
 @media (max-width: 767px) {

@@ -1,6 +1,33 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('browser API contract', () => {
+  it('preserves target validation fields and excludes unknown server details', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(JSON.stringify({ csrf_token: 'target-fixture' })))
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              target_iqd: ['Enter a positive target.'],
+              target_usd: ['Use a decimal string.'],
+              target_version: ['Refresh the account.'],
+              trace: ['private fixture'],
+            }),
+            { status: 400 },
+          ),
+        ),
+    )
+    const { apiRequest } = await import('./api')
+    await expect(apiRequest('accounts/1/', {})).rejects.toMatchObject({
+      fields: {
+        target_iqd: ['Enter a positive target.'],
+        target_usd: ['Use a decimal string.'],
+        target_version: ['Refresh the account.'],
+      },
+    })
+  })
   it.each([
     { user: null, two_factor_pending: false },
     { user: null, two_factor_pending: true },

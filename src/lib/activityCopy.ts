@@ -77,7 +77,7 @@ const english = {
     'This transaction changed or this submission was already used. Refresh Activity before trying again.',
   back: 'Back to Activity',
   openingNote:
-    'Opening balances stay in Accounts. Transfers and exchanges are not income or spending.',
+    'Opening balances stay in Accounts. Transfers, exchanges and debt movements are not income or spending.',
   archived: 'Archived',
   save: 'Save transaction',
   noDefault: 'No default selected. Choose an account and currency for this transaction.',
@@ -152,7 +152,8 @@ const arabic: typeof english = {
     'أدخل مبلغاً موجباً بمنزلتين عشريتين كحد أقصى. يجب أن تبقى الأرصدة المتأثرة ضمن الحد المسموح وألا تصبح سالبة.',
   conflict: 'تغيّرت الحركة أو استُخدم هذا الإرسال سابقاً. حدّث الحركات قبل المحاولة مجدداً.',
   back: 'العودة إلى الحركات',
-  openingNote: 'تبقى الأرصدة الافتتاحية في الحسابات. التحويلات وصرف العملات ليست إيراداً أو مصروفاً.',
+  openingNote:
+    'تبقى الأرصدة الافتتاحية في الحسابات. التحويلات وصرف العملات وحركات الديون ليست إيراداً أو مصروفاً.',
   archived: 'مؤرشف',
   save: 'حفظ الحركة',
   noDefault: 'لم يُحدد حساب وعملة افتراضيان. اخترهما لهذه الحركة.',

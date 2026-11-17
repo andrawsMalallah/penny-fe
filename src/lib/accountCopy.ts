@@ -2,6 +2,15 @@ import { computed } from 'vue'
 import { language } from './preferences'
 
 const english = {
+  targets: 'Targets (optional)',
+  target: 'Target',
+  targetsHelp:
+    'Track each currency against its current balance. Leave a field empty to remove its target. Targets do not reserve money or limit spending.',
+  targetReached: 'Target reached',
+  targetOf: 'of',
+  targetRemaining: 'Remaining',
+  targetConflict:
+    'These targets changed elsewhere. Cancel, refresh Accounts, and open the editor again.',
   accounts: 'Accounts',
   groups: 'Account groups',
   intro: 'Organize the money you hold. Keep IQD and USD separate.',
@@ -63,6 +72,14 @@ const english = {
   archiveFunds: 'Archived money is still held in this account.',
 }
 const arabic: typeof english = {
+  targets: 'الأهداف (اختياري)',
+  target: 'الهدف',
+  targetsHelp:
+    'تابع كل عملة حسب رصيدها الحالي. اترك الحقل فارغًا لإزالة هدفه. الأهداف لا تحجز الأموال ولا تحدّ الإنفاق.',
+  targetReached: 'تم بلوغ الهدف',
+  targetOf: 'من',
+  targetRemaining: 'المتبقي',
+  targetConflict: 'تغيّرت هذه الأهداف في مكان آخر. ألغِ التعديل وحدّث الحسابات ثم افتح المحرّر مجددًا.',
   accounts: 'الحسابات',
   groups: 'مجموعات الحسابات',
   intro: 'نظّم الأموال التي تملكها. أرصدة الدينار والدولار منفصلة.',

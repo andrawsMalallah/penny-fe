@@ -16,6 +16,7 @@ import BackButton from './BackButton.vue'
 import ControlIcon from './ControlIcon.vue'
 import PageControls from './PageControls.vue'
 import PrimaryButton from './PrimaryButton.vue'
+import AccountTarget from './AccountTarget.vue'
 
 const AccountEditor = defineAsyncComponent(() => import('./AccountEditor.vue'))
 const emit = defineEmits<{ back: []; expired: []; settings: [] }>()
@@ -33,7 +34,7 @@ const confirmation = ref<MoneyAccount | AccountGroup | null>(null)
 const heading = ref<HTMLElement | null>(null)
 const errorSummary = ref<HTMLElement | null>(null)
 const confirmHeading = ref<HTMLElement | null>(null)
-const errorKey = ref<'error' | 'validation' | 'unavailable' | 'stale' | ''>('')
+const errorKey = ref<'error' | 'validation' | 'unavailable' | 'stale' | 'targetConflict' | ''>('')
 const fieldMessages = ref<Record<string, string[]>>({})
 const fields = computed(() =>
   Object.fromEntries(
@@ -66,11 +67,13 @@ async function handleError(cause: unknown): Promise<void> {
     cause instanceof ApiError
       ? cause.status === 400
         ? 'validation'
-        : cause.status === 404
-          ? 'unavailable'
-          : cause.status === 403
-            ? 'stale'
-            : 'error'
+        : cause.status === 409
+          ? 'targetConflict'
+          : cause.status === 404
+            ? 'unavailable'
+            : cause.status === 403
+              ? 'stale'
+              : 'error'
       : 'error'
   await nextTick()
   errorSummary.value?.focus()
@@ -327,6 +330,20 @@ onMounted(async () => {
                 <dd dir="ltr">{{ formatMoney(record.balance_usd) }}</dd>
               </div>
             </dl>
+            <div v-if="record.target_iqd || record.target_usd" class="account-targets">
+              <AccountTarget
+                v-if="record.target_iqd"
+                :balance="record.balance_iqd"
+                :target="record.target_iqd"
+                currency="IQD"
+              />
+              <AccountTarget
+                v-if="record.target_usd"
+                :balance="record.balance_usd"
+                :target="record.target_usd"
+                currency="USD"
+              />
+            </div>
             <details class="account-opening">
               <summary>{{ text.opening }}</summary>
               <dl>

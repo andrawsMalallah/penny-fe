@@ -9,6 +9,7 @@ import { copy } from './lib/copy'
 import { accountCopy } from './lib/accountCopy'
 import { designCopy } from './lib/designCopy'
 import { activityCopy } from './lib/activityCopy'
+import { debtCopy } from './lib/debtCopy'
 import { useNavigation } from './lib/navigation'
 import { initializePreferences, language } from './lib/preferences'
 import { useWorkspaceSession } from './lib/useWorkspaceSession'
@@ -17,6 +18,7 @@ initializePreferences()
 const SettingsPage = defineAsyncComponent(() => import('./components/SettingsPage.vue'))
 const AccountsPage = defineAsyncComponent(() => import('./components/AccountsPage.vue'))
 const ActivityPage = defineAsyncComponent(() => import('./components/ActivityPage.vue'))
+const DebtsPage = defineAsyncComponent(() => import('./components/DebtsPage.vue'))
 const OverviewPage = defineAsyncComponent(() => import('./components/OverviewPage.vue'))
 const PreferencesPage = defineAsyncComponent(() => import('./components/PreferencesPage.vue'))
 const { page, navigate } = useNavigation()
@@ -37,15 +39,17 @@ watch(
   [page, user, language],
   () => {
     document.title =
-      page.value === 'activity' && user.value
-        ? `${activityCopy.value.title} | Penny`
-        : page.value === 'accounts' && user.value
-          ? `${accountCopy.value.accounts} | Penny`
-          : page.value === 'settings' && user.value
-            ? `${copy.value.settings} | Penny`
-            : page.value === 'preferences'
-              ? `${copy.value.languageAppearance} | Penny`
-              : 'Penny'
+      page.value === 'debts' && user.value
+        ? `${debtCopy.value.title} | Penny`
+        : page.value === 'activity' && user.value
+          ? `${activityCopy.value.title} | Penny`
+          : page.value === 'accounts' && user.value
+            ? `${accountCopy.value.accounts} | Penny`
+            : page.value === 'settings' && user.value
+              ? `${copy.value.settings} | Penny`
+              : page.value === 'preferences'
+                ? `${copy.value.languageAppearance} | Penny`
+                : 'Penny'
   },
   { immediate: true },
 )
@@ -61,13 +65,15 @@ watch(
       :user="user"
       :busy="busy"
       :title="
-        page === 'activity'
-          ? activityCopy.title
-          : page === 'accounts'
-            ? accountCopy.accounts
-            : page === 'home'
-              ? designCopy.overview
-              : copy.settings
+        page === 'debts'
+          ? debtCopy.title
+          : page === 'activity'
+            ? activityCopy.title
+            : page === 'accounts'
+              ? accountCopy.accounts
+              : page === 'home'
+                ? designCopy.overview
+                : copy.settings
       "
       @settings="navigate('settings')"
       @logout="logout"
@@ -97,6 +103,7 @@ watch(
         @accounts="navigate('accounts')"
       />
       <ActivityPage v-else-if="page === 'activity' && user" @expired="finishSession(false, true)" />
+      <DebtsPage v-else-if="page === 'debts' && user" @expired="finishSession(false, true)" />
       <PreferencesPage
         v-else-if="page === 'preferences' && user"
         @back="navigate(user ? 'settings' : 'home')"

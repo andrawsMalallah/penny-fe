@@ -1,7 +1,8 @@
 import { apiRequest } from './api'
 import type { RecordPage } from './accounts'
 
-export type TransactionKind = 'income' | 'expense' | 'transfer' | 'exchange'
+export type TransactionKind =
+  'income' | 'expense' | 'transfer' | 'exchange' | 'debt_in' | 'debt_out'
 export type Currency = 'IQD' | 'USD'
 export interface TransactionValues {
   account: number | null
@@ -17,6 +18,9 @@ export interface TransactionValues {
   timezone: string
 }
 export interface MoneyTransaction extends Omit<TransactionValues, 'timezone'> {
+  debt: number | null
+  debt_role: '' | 'principal' | 'repayment'
+  debt_person_name: string
   id: number
   account: number
   currency: Currency

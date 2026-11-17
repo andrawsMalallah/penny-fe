@@ -18,9 +18,15 @@ defineProps<{
     | 'expense'
     | 'transfer'
     | 'exchange'
+    | 'debt_in'
+    | 'debt_out'
+    | 'debts'
 }>()
 
 const paths = {
+  debts: ['M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 21v-2a8 8 0 0 1 16 0v2', 'M9 17h6'],
+  debt_in: ['M12 19V5', 'm6 11 6-6 6 6'],
+  debt_out: ['M12 5v14', 'm6 13 6 6 6-6'],
   exchange: ['M4 7h16', 'm16 3 4 4-4 4', 'M20 17H4', 'm8 13-4 4 4 4'],
   transfer: ['M4 7h16', 'm16 3 4 4-4 4', 'M20 17H4', 'm8 13-4 4 4 4'],
   activity: ['M4 3h16v18H4Z', 'M8 7h8', 'M8 12h8', 'M8 17h5'],
