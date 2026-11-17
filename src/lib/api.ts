@@ -105,6 +105,8 @@ function safeFields(payload: unknown): Record<string, string[]> {
     'exchange_rate',
     'default_account',
     'name',
+    'name_en',
+    'name_ar',
     'group',
     'opening_iqd',
     'opening_usd',

@@ -2,6 +2,16 @@
 
 Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups and opening balances are implemented; financial transactions and analytics are pending.
 
+## Expense categories
+
+Open **Settings → Expense categories** to manage eight editable bilingual starters and custom categories. First entry performs a CSRF-protected, idempotent initialization POST, then reads the current bounded API page. Categories are never stored in browser storage. Create/edit requires at least one English/Arabic name; display follows the selected language and falls back to the available name. Each input has an explicit writing direction. Names are unique per user and language, including archived categories.
+
+Archive/restore requires confirmation; Cancel returns focus to its action. Archived categories cannot be edited until restored, and renamed/archived starters do not reappear. Panels/editor are lazy-loaded and reuse shared fields, buttons, pagination and feedback. RefreshButton accepts an optional label, preserving its existing signed-in-device default.
+
+Verification: 55 unit tests, lint, formatting and production build/typecheck pass. Local public-fixture browser checks cover create/edit, optional translation fallback, duplicate/blank names, confirmation/cancel/focus, archive/restore, stale CSRF without mutation replay, retry, pagination and guest protection. Another 48 list/editor screen checks cover EN/AR, Light/Dark and 320/390/768/844 landscape/1024/1440 widths; screenshots were inspected in both languages/themes. Physical phone acceptance remains manual. No browser tooling is added to CI/deployment.
+
+Manual acceptance: on a phone and desktop open Settings → Expense categories, check the eight starters, add a category with one name, rename it with both names, switch language, archive/cancel/confirm/restore, and reload to confirm starters remain edited. Try duplicate names, including an archived category, and check Light/Dark/System, portrait/landscape, keyboard and Back focus.
+
 ## Accounts
 
 Authenticated workspace navigation includes lazy-loaded `#/accounts`. It supports money accounts, optional account groups, exact separate IQD/USD opening money, name/group edits, retained opening details and confirmed archive/restore. Settings includes an optional spending-default selector and link to Accounts. The initial-avatar menu still contains only Settings and Sign out.

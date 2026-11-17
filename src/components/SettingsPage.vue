@@ -13,16 +13,18 @@ import AccountSelect from './AccountSelect.vue'
 import { accountCopy } from '../lib/accountCopy'
 import { designCopy } from '../lib/designCopy'
 import ControlIcon from './ControlIcon.vue'
+import { categoryCopy } from '../lib/categoryCopy'
 
 const TwoFactorPanel = defineAsyncComponent(() => import('./TwoFactorPanel.vue'))
 const SessionPanel = defineAsyncComponent(() => import('./SessionPanel.vue'))
+const CategoryPanel = defineAsyncComponent(() => import('./CategoryPanel.vue'))
 const emit = defineEmits<{
   expired: []
   signedOut: []
   saved: [language: 'en' | 'ar']
   accounts: []
 }>()
-const panel = ref<'settings' | 'factor' | 'sessions'>('settings')
+const panel = ref<'settings' | 'factor' | 'sessions' | 'categories'>('settings')
 const category = ref<'general' | 'security'>('general')
 const mobileDetail = ref(false)
 const heading = ref<HTMLElement | null>(null)
@@ -95,7 +97,7 @@ async function save(): Promise<void> {
   }
 }
 
-function openPanel(value: 'factor' | 'sessions', event: Event): void {
+function openPanel(value: 'factor' | 'sessions' | 'categories', event: Event): void {
   securityTrigger.value = event.currentTarget as HTMLButtonElement
   panel.value = value
   saved.value = false
@@ -152,10 +154,24 @@ async function closeCategory(): Promise<void> {
           ><ControlIcon class="category-chevron" name="chevron" />
         </button>
         <button
+          id="settings-category-expenses"
+          class="settings-category"
+          type="button"
+          :aria-pressed="panel === 'categories'"
+          :disabled="busy || panel !== 'settings'"
+          @click="openPanel('categories', $event)"
+        >
+          <ControlIcon name="category" /><span
+            ><strong>{{ categoryCopy.title }}</strong
+            ><span>{{ categoryCopy.intro }}</span></span
+          >
+          <ControlIcon class="category-chevron" name="chevron" />
+        </button>
+        <button
           id="settings-category-security"
           class="settings-category"
           type="button"
-          :aria-pressed="category === 'security' || panel === 'factor'"
+          :aria-pressed="(category === 'security' && panel === 'settings') || panel === 'factor'"
           :disabled="busy || panel !== 'settings'"
           @click="selectCategory('security')"
         >
@@ -182,11 +198,12 @@ async function closeCategory(): Promise<void> {
         <div v-if="panel !== 'settings'" class="settings-detail">
           <TwoFactorPanel v-if="panel === 'factor'" @back="closePanel" @expired="emit('expired')" />
           <SessionPanel
-            v-else
+            v-else-if="panel === 'sessions'"
             @back="closePanel"
             @expired="emit('expired')"
             @signed-out="emit('signedOut')"
           />
+          <CategoryPanel v-else @back="closePanel" @expired="emit('expired')" />
         </div>
         <template v-else>
           <BackButton
