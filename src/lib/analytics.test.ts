@@ -13,6 +13,10 @@ import { pageFromHash } from './navigation'
 
 afterEach(() => vi.unstubAllGlobals())
 describe('analytics precision and report navigation', () => {
+  it('formats early calendar years without shifting them into the twentieth century', () => {
+    expect(monthLabel('0001-01', 'en')).toBe('Jan 1')
+    expect(monthLabel('2026-11', 'en')).toBe('Nov 2026')
+  })
   it('keeps exact signed aggregate amounts above single-account capacity', () => {
     expect(cents('19999999999999999.98')).toBe(1999999999999999998n)
     expect(cents('-100.01')).toBe(-10001n)

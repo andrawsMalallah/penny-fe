@@ -26,26 +26,38 @@ const props = defineProps<{
   defaults: UserSettings
   busy: boolean
   fields: Record<string, string[]>
+  saveDisabled?: boolean
+  initialValues?: Partial<TransactionValues>
+  ordinaryOnly?: boolean
+  scheduleMode?: boolean
+  headingLabel?: string
+  submitLabel?: string
+  dateFieldLabel?: string
+  dateHelp?: string
 }>()
 const emit = defineEmits<{
   save: [values: TransactionValues]
   cancel: []
   error: [cause: unknown]
 }>()
-const kind = ref(props.item?.kind ?? props.kind)
+const kind = ref(props.item?.kind ?? props.initialValues?.kind ?? props.kind)
 const account = ref(
   String(
-    props.item?.account ?? (props.kind === 'expense' ? (props.defaults.default_account ?? '') : ''),
+    props.item?.account ??
+      props.initialValues?.account ??
+      (props.kind === 'expense' ? (props.defaults.default_account ?? '') : ''),
   ),
 )
 const currency = ref(
-  props.item?.currency ?? (props.kind === 'expense' ? props.defaults.default_currency : ''),
+  props.item?.currency ??
+    props.initialValues?.currency ??
+    (props.kind === 'expense' ? props.defaults.default_currency : ''),
 )
-const category = ref(String(props.item?.category ?? ''))
+const category = ref(String(props.item?.category ?? props.initialValues?.category ?? ''))
 const destination = ref(String(props.item?.destination ?? ''))
 const destinationAccount = ref<MoneyAccount | null>(null)
 const destinationChoicesReady = ref(false)
-const amount = ref(props.item?.amount ?? '')
+const amount = ref(props.item?.amount ?? props.initialValues?.amount ?? '')
 const exchangeRate = ref(props.item?.exchange_rate ?? props.defaults.exchange_rate ?? '')
 const reviewed = ref<TransactionValues | null>(null)
 const exchangeError = ref(false)
@@ -53,8 +65,8 @@ const missingRate = computed(
   () =>
     kind.value === 'exchange' && props.item?.kind !== 'exchange' && !props.defaults.exchange_rate,
 )
-const date = ref(props.item?.date ?? localDate())
-const note = ref(props.item?.note ?? '')
+const date = ref(props.item?.date ?? props.initialValues?.date ?? localDate())
+const note = ref(props.item?.note ?? props.initialValues?.note ?? '')
 const currentAccount = ref<MoneyAccount | null>(null)
 const loadingAccount = ref(false)
 const accountFailed = ref(false)
@@ -67,7 +79,7 @@ const earliest = computed(() => {
     kind.value === 'transfer'
       ? (destinationAccount.value?.opening.effective_date ?? props.item?.destination_opening_date)
       : null
-  return [sourceDate, destinationDate]
+  return [props.scheduleMode && props.initialValues ? undefined : sourceDate, destinationDate]
     .filter((value): value is string => !!value)
     .sort()
     .at(-1)
@@ -127,6 +139,7 @@ function fieldError(field: string): string | undefined {
 }
 function save(): void {
   if (
+    props.saveDisabled ||
     props.busy ||
     loadingAccount.value ||
     accountFailed.value ||
@@ -173,7 +186,8 @@ onBeforeUnmount(() => {
   <section class="transaction-editor surface-panel" aria-labelledby="transaction-editor-title">
     <h2 id="transaction-editor-title" ref="heading" tabindex="-1">
       {{
-        item
+        headingLabel ||
+        (item
           ? text.edit
           : kind === 'exchange'
             ? text.addExchange
@@ -181,10 +195,10 @@ onBeforeUnmount(() => {
               ? text.addTransfer
               : kind === 'income'
                 ? text.addIncome
-                : text.addExpense
+                : text.addExpense)
       }}
     </h2>
-    <p class="field-help">{{ text.historicalHelp }}</p>
+    <p v-if="!scheduleMode" class="field-help">{{ text.historicalHelp }}</p>
     <p v-if="kind === 'transfer'" class="field-help">{{ text.transferHelp }}</p>
     <ExchangeReview
       v-if="reviewed"
@@ -196,6 +210,7 @@ onBeforeUnmount(() => {
       @cancel="emit('cancel')"
     />
     <form v-else @submit.prevent="save">
+      <slot name="schedule-fields" />
       <p v-if="kind === 'exchange'" class="field-help">{{ text.exchangeHelp }}</p>
       <p v-if="missingRate" class="field-help">
         {{ text.missingRate }} <a href="#/settings">{{ text.openSettings }}</a>
@@ -212,8 +227,10 @@ onBeforeUnmount(() => {
               :described-by="describedBy"
               ><option value="income">{{ text.income }}</option>
               <option value="expense">{{ text.expense }}</option>
-              <option value="transfer">{{ text.transfer }}</option>
-              <option value="exchange">{{ text.exchange }}</option></SelectControl
+              <option v-if="!ordinaryOnly" value="transfer">{{ text.transfer }}</option>
+              <option v-if="!ordinaryOnly" value="exchange">
+                {{ text.exchange }}
+              </option></SelectControl
             ></template
           >
         </FormField>
@@ -336,9 +353,9 @@ onBeforeUnmount(() => {
         </FormField>
         <FormField
           id="transaction-date"
-          :label="text.date"
+          :label="props.dateFieldLabel ?? text.date"
           :error="fieldError('date')"
-          :help="text.dateHelp"
+          :help="props.dateHelp ?? text.dateHelp"
         >
           <template #default="{ describedBy, invalid }"
             ><input
@@ -348,7 +365,7 @@ onBeforeUnmount(() => {
               dir="ltr"
               required
               :min="earliest"
-              :max="localDate()"
+              :max="scheduleMode ? undefined : localDate()"
               :disabled="busy"
               :aria-invalid="invalid"
               :aria-describedby="describedBy"
@@ -380,7 +397,10 @@ onBeforeUnmount(() => {
       </button>
       <p
         v-if="
-          !item && kind === 'expense' && (!defaults.default_account || !defaults.default_currency)
+          !item &&
+          !initialValues &&
+          kind === 'expense' &&
+          (!defaults.default_account || !defaults.default_currency)
         "
         class="field-help"
       >
@@ -404,6 +424,7 @@ onBeforeUnmount(() => {
         <PrimaryButton
           :busy="busy"
           :disabled="
+            saveDisabled ||
             loadingAccount ||
             accountFailed ||
             !accountChoicesReady ||
@@ -412,7 +433,9 @@ onBeforeUnmount(() => {
               (!destinationChoicesReady || !destination || destination === account)) ||
             (kind === 'expense' && !categoryChoicesReady)
           "
-          >{{ kind === 'exchange' ? text.reviewExchange : text.save }}</PrimaryButton
+          >{{
+            submitLabel ?? (kind === 'exchange' ? text.reviewExchange : text.save)
+          }}</PrimaryButton
         >
         <button type="button" class="secondary-button" :disabled="busy" @click="emit('cancel')">
           {{ accountCopy.cancel }}

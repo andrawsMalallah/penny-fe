@@ -1,0 +1,104 @@
+.activity-sections {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.activity-sections > button {
+  flex: 1;
+  max-width: 240px;
+}
+.activity-sections > button[aria-pressed='true'] {
+  background: var(--selected);
+  border-color: var(--selected-border);
+  color: var(--ink);
+}
+.recurring-panel {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.recurring-panel > .panel-heading {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
+  align-items: start;
+}
+.recurring-panel > .panel-heading > div {
+  min-width: 0;
+  flex: 1;
+}
+.recurring-panel .back-button {
+  justify-self: start;
+  margin-bottom: 0;
+}
+.recurring-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+}
+.recurring-toolbar > .form-field {
+  flex: 1;
+  margin: 0;
+  min-width: 180px;
+}
+.recurring-toolbar > button {
+  margin-top: 0;
+}
+.recurring-list {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.recurring-card,
+.recurring-slot {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.recurring-card .panel-heading {
+  align-items: start;
+  flex-wrap: wrap;
+}
+.recurring-card h3 {
+  margin: 0;
+}
+.recurring-card .panel-heading > span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.recurring-card bdi,
+.recurring-state bdi {
+  font-variant-numeric: tabular-nums;
+}
+.recurring-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.recurring-stop {
+  color: var(--error);
+}
+.recurring-panel > .page-controls {
+  flex-wrap: wrap;
+}
+@media (max-width: 680px) {
+  .recurring-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .recurring-toolbar > .form-field {
+    width: 100%;
+    min-width: 0;
+  }
+  .recurring-toolbar > button,
+  .recurring-actions > button {
+    width: 100%;
+  }
+  .recurring-actions {
+    flex-direction: column;
+  }
+}

@@ -6,6 +6,7 @@ import { copy } from '../lib/copy'
 import { activityCopy } from '../lib/activityCopy'
 import { debtCopy } from '../lib/debtCopy'
 import { analyticsCopy } from '../lib/analyticsCopy'
+import { budgetCopy } from '../lib/budgetCopy'
 import ControlIcon from './ControlIcon.vue'
 defineProps<{ page: Page }>()
 const emit = defineEmits<{ navigate: [page: Page] }>()
@@ -55,6 +56,12 @@ const emit = defineEmits<{ navigate: [page: Page] }>()
         ><span class="navigation-short-label" aria-hidden="true">{{
           analyticsCopy.shortTitle
         }}</span></a
+      >
+      <a
+        href="#/budgets"
+        :aria-current="page === 'budgets' ? 'page' : undefined"
+        @click.prevent="emit('navigate', 'budgets')"
+        ><ControlIcon name="budgets" /><span>{{ budgetCopy.title }}</span></a
       >
       <a
         href="#/settings"

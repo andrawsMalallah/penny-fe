@@ -5,6 +5,7 @@ describe('page navigation', () => {
   it('supports direct settings and signed-out preference URLs', () => {
     expect(pageFromHash('#/settings')).toBe('settings')
     expect(pageFromHash('#/accounts')).toBe('accounts')
+    expect(pageFromHash('#/budgets')).toBe('budgets')
     expect(pageFromHash('#/activity')).toBe('activity')
     expect(pageFromHash('#/debts')).toBe('debts')
     expect(pageFromHash('#/debts/33')).toBe('debts')

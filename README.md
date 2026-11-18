@@ -2,6 +2,30 @@
 
 Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups, opening balances, categories, Activity, transfers, exchanges, debts, repayments, account targets and analytics are implemented.
 
+## Recurring income and expenses
+
+Activity has Transactions and lazy Recurring sections, with no new navbar destination. Recurring shows paginated/status-filtered schedules and bounded per-schedule pending dates. Add/edit saves a name, income/expense details, weekly/monthly/yearly timing, a valid past/current/future start and optional inclusive end. Missing dates use month-end without anchor drift. Timing edits change future dates only; metadata edits update pending items, while recorded transactions remain unchanged.
+
+Each due item stays pending until you review and record an ordinary transaction or explicitly confirm Skip. Review defaults actual payment date to today and reuses the existing transaction editor. Pausing/stopping require confirmation and keep pending items; resume skips dates missed while paused. A permanent stop cannot resume/edit. Later correction/deletion of a recorded transaction never reopens that recurring slot. Pending/schedules alone never affect balances, budgets or reports.
+
+Memory-only initial values, ordinary-kind-only mode and schedule-date labels extend the shared editor; standard transaction modes retain their date/ledger contracts. Account/category reads remain bounded; failed choices block recording until recovered. Schedule versions and create UUIDs guard saves; conflict/ambiguous failures require cancel/refresh rather than automatic replay. Cancellation restores focus, read retries retain attempted pagination and failed reads clear old cards. English/Arabic, existing themes, RTL and six mobile destinations remain authoritative.
+
+Local verification: 109 frontend tests, ESLint/Prettier/typechecked production build, 144 recurring responsive checks and 312 existing Activity/transfer/exchange/Analytics regression screens plus interactions. Backend has 279 passing PostgreSQL tests. No packages changed; phone acceptance/publication are pending.
+
+Manual review: Activity -> Recurring -> Add schedule; start today to get a due item, confirm its reviewed transaction, then compare Activity/balance/budget. Test skipping, timing/detail edits, optional end, pause/resume/stop and stale-tab protection. Inspect both languages/themes and phone orientations. No money moves until Record transaction; creating/editing/pausing/skipping schedules never changes cash.
+
+## Monthly category budgets
+
+Private lazy `#/budgets` offers a month selector, paginated category budgets, optional independent IQD/USD limits, exact spent/remaining/excess amounts and accessible progress. Ordinary expenses across all accounts count; other money movements do not. Budgets never reserve money or block spending. Each category repeats from its starting month without unused allowance rollover. New budgets default to This month and future months; edits default to This month only. Future changes replace later planned limits/exceptions for that category, leaving earlier months intact; the editor explains this. Both-currency removal requires confirmation and the same scope choice.
+
+The shared paginated category picker loads each chosen category's current version before saving. Conflicts/ambiguous saves require cancel/refresh/reopen; writes are never automatically replayed. All financial state stays in memory. Month changes are applied explicitly, refresh uses the applied month, and failed refresh removes stale cards. Expense links open Activity with the selected category, currency and complete fixed calendar month. Existing category language fallback, shared styles, RTL and themes apply.
+
+Mobile bottom navigation now shows Overview, Accounts, Activity, Debts, Analytics and Budgets. Settings remains in the header avatar dropdown and desktop sidebar, and is hidden only from mobile navigation below 1024px.
+
+Local verification: 105 frontend tests, ESLint/Prettier/typechecked production build, 72 budget responsive checks across EN/AR, Light/Dark and 320-1440px plus interactions, and 72 existing Analytics responsive checks. Backend verification: 260 PostgreSQL tests. No packages changed. Physical-device acceptance and publication remain pending.
+
+Manual check: set a category limit and compare spending with Activity; inspect repetition next month, a month-only edit, a lasting edit, both removal scopes, independent currencies, excess warnings and stale-tab conflicts. Verify Settings from the mobile avatar menu and check phone portrait/landscape in both languages/themes. Account balances must remain unchanged by budget edits/removal.
+
 ## Analytics
 
 Lazy private `#/analytics` shows current money held, debts owed-to-me/I-owe and net position for both currencies, including archived accounts. “As of now” stays separate from selected-period income/spending/difference and previous-period comparison. Default is This month; Previous month, This year and Custom range apply explicitly. Report currency changes between separate IQD/USD views without conversion or another request. Six-month income/spending charts always end in the current month; exact accessible tables accompany charts. Category shares use the full currency spending total, never a partial-page sum. Accounts/groups/category/person breakdowns are paginated; current accounts can display saved targets.

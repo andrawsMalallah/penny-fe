@@ -11,6 +11,7 @@ import { designCopy } from './lib/designCopy'
 import { activityCopy } from './lib/activityCopy'
 import { debtCopy } from './lib/debtCopy'
 import { analyticsCopy } from './lib/analyticsCopy'
+import { budgetCopy } from './lib/budgetCopy'
 import { useNavigation } from './lib/navigation'
 import { initializePreferences, language } from './lib/preferences'
 import { useWorkspaceSession } from './lib/useWorkspaceSession'
@@ -21,6 +22,7 @@ const AccountsPage = defineAsyncComponent(() => import('./components/AccountsPag
 const ActivityPage = defineAsyncComponent(() => import('./components/ActivityPage.vue'))
 const DebtsPage = defineAsyncComponent(() => import('./components/DebtsPage.vue'))
 const AnalyticsPage = defineAsyncComponent(() => import('./components/AnalyticsPage.vue'))
+const BudgetsPage = defineAsyncComponent(() => import('./components/BudgetsPage.vue'))
 const OverviewPage = defineAsyncComponent(() => import('./components/OverviewPage.vue'))
 const PreferencesPage = defineAsyncComponent(() => import('./components/PreferencesPage.vue'))
 const { page, navigate } = useNavigation()
@@ -41,19 +43,21 @@ watch(
   [page, user, language],
   () => {
     document.title =
-      page.value === 'analytics' && user.value
-        ? `${analyticsCopy.value.title} | Penny`
-        : page.value === 'debts' && user.value
-          ? `${debtCopy.value.title} | Penny`
-          : page.value === 'activity' && user.value
-            ? `${activityCopy.value.title} | Penny`
-            : page.value === 'accounts' && user.value
-              ? `${accountCopy.value.accounts} | Penny`
-              : page.value === 'settings' && user.value
-                ? `${copy.value.settings} | Penny`
-                : page.value === 'preferences'
-                  ? `${copy.value.languageAppearance} | Penny`
-                  : 'Penny'
+      page.value === 'budgets' && user.value
+        ? `${budgetCopy.value.title} | Penny`
+        : page.value === 'analytics' && user.value
+          ? `${analyticsCopy.value.title} | Penny`
+          : page.value === 'debts' && user.value
+            ? `${debtCopy.value.title} | Penny`
+            : page.value === 'activity' && user.value
+              ? `${activityCopy.value.title} | Penny`
+              : page.value === 'accounts' && user.value
+                ? `${accountCopy.value.accounts} | Penny`
+                : page.value === 'settings' && user.value
+                  ? `${copy.value.settings} | Penny`
+                  : page.value === 'preferences'
+                    ? `${copy.value.languageAppearance} | Penny`
+                    : 'Penny'
   },
   { immediate: true },
 )
@@ -69,17 +73,19 @@ watch(
       :user="user"
       :busy="busy"
       :title="
-        page === 'analytics'
-          ? analyticsCopy.title
-          : page === 'debts'
-            ? debtCopy.title
-            : page === 'activity'
-              ? activityCopy.title
-              : page === 'accounts'
-                ? accountCopy.accounts
-                : page === 'home'
-                  ? designCopy.overview
-                  : copy.settings
+        page === 'budgets'
+          ? budgetCopy.title
+          : page === 'analytics'
+            ? analyticsCopy.title
+            : page === 'debts'
+              ? debtCopy.title
+              : page === 'activity'
+                ? activityCopy.title
+                : page === 'accounts'
+                  ? accountCopy.accounts
+                  : page === 'home'
+                    ? designCopy.overview
+                    : copy.settings
       "
       @settings="navigate('settings')"
       @logout="logout"
@@ -110,6 +116,7 @@ watch(
       />
       <ActivityPage v-else-if="page === 'activity' && user" @expired="finishSession(false, true)" />
       <DebtsPage v-else-if="page === 'debts' && user" @expired="finishSession(false, true)" />
+      <BudgetsPage v-else-if="page === 'budgets' && user" @expired="finishSession(false, true)" />
       <AnalyticsPage
         v-else-if="page === 'analytics' && user"
         @expired="finishSession(false, true)"

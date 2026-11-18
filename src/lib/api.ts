@@ -128,6 +128,16 @@ function safeFields(payload: unknown): Record<string, string[]> {
     'target_iqd',
     'target_usd',
     'target_version',
+    'month',
+    'scope',
+    'version',
+    'limit_iqd',
+    'limit_usd',
+    'frequency',
+    'start_date',
+    'end_date',
+    'scheduled_date',
+    'state',
   ]) {
     const messages = (payload as Record<string, unknown>)[field]
     if (Array.isArray(messages) && messages.every((message) => typeof message === 'string')) {

@@ -22,9 +22,11 @@ defineProps<{
     | 'debt_out'
     | 'debts'
     | 'analytics'
+    | 'budgets'
 }>()
 
 const paths = {
+  budgets: ['M12 3a9 9 0 1 0 9 9', 'M12 3v9h9', 'm16 4 4 4', 'm16 8 4-4'],
   analytics: ['M4 3v18h17', 'M8 16v-5', 'M13 16V7', 'M18 16V4'],
   debts: ['M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 21v-2a8 8 0 0 1 16 0v2', 'M9 17h6'],
   debt_in: ['M12 19V5', 'm6 11 6-6 6 6'],

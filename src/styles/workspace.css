@@ -551,7 +551,7 @@
     overflow-wrap: anywhere;
   }
   .workspace-destinations > .navigation-settings {
-    margin: 0;
+    display: none;
   }
   .authenticated-header .header-page-title {
     display: none;

@@ -106,8 +106,11 @@ export function activityLink(filters: Partial<ActivityFilters>): string {
 }
 export function monthLabel(value: string, language: 'en' | 'ar'): string {
   const [year, month] = value.split('-').map(Number)
+  const calendar = new Date(0)
+  calendar.setFullYear(year!, month! - 1, 1)
+  calendar.setHours(12, 0, 0, 0)
   return new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ-u-ca-gregory' : 'en', {
     month: 'short',
     year: 'numeric',
-  }).format(new Date(year!, month! - 1, 1, 12))
+  }).format(calendar)
 }

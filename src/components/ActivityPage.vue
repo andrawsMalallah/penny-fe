@@ -10,6 +10,7 @@ import { accountCopy } from '../lib/accountCopy'
 import { language } from '../lib/preferences'
 import { receivedCurrency } from '../lib/exchanges'
 import { debtCopy } from '../lib/debtCopy'
+import { recurringCopy } from '../lib/recurringCopy'
 import {
   dateLabel,
   getTransactions,
@@ -28,6 +29,14 @@ import RefreshButton from './RefreshButton.vue'
 import ControlIcon from './ControlIcon.vue'
 
 const TransactionEditor = defineAsyncComponent(() => import('./TransactionEditor.vue'))
+const RecurringPanel = defineAsyncComponent(() => import('./RecurringPanel.vue'))
+const recurringSection = ref(false)
+const recurringBusy = ref(false)
+async function changeSection(value: boolean): Promise<void> {
+  if (busy.value || recurringBusy.value || editing.value || confirmation.value) return
+  recurringSection.value = value
+  if (!value) await load()
+}
 const emit = defineEmits<{ expired: [] }>()
 const emptyFilters = (): Filters => ({
   account: '',
@@ -213,6 +222,7 @@ onMounted(async () => {
 })
 const onRouteChange = (): void => {
   if (window.location.hash.split('?')[0] !== '#/activity') return
+  recurringSection.value = false
   filters.value = activityFiltersFromHash(window.location.hash)
   applied.value = { ...filters.value }
   // Route changes may select an item outside the picker's loaded page.
@@ -235,219 +245,254 @@ onScopeDispose(() => window.removeEventListener('hashchange', onRouteChange))
         <p>{{ text.intro }}</p>
       </div>
       <RefreshButton
-        v-if="!editing && !confirmation"
+        v-if="!recurringSection && !editing && !confirmation"
         :label="text.refresh"
         :busy="busy"
         icon-only
         @click="load()"
       />
     </div>
-    <BackButton
-      v-if="editing || confirmation"
-      :label="text.back"
-      :disabled="busy"
-      @click="closeEditor"
-    />
     <div
-      v-if="error || conflict"
-      ref="errorSummary"
-      class="error-summary"
-      role="alert"
-      tabindex="-1"
+      v-if="!editing && !confirmation"
+      class="activity-sections"
+      role="group"
+      :aria-label="text.title"
     >
-      {{ conflict ? text.conflict : fieldErrors.amount ? text.amountError : error }}
+      <button
+        type="button"
+        class="secondary-button"
+        :aria-pressed="!recurringSection"
+        :disabled="busy || recurringBusy"
+        @click="changeSection(false)"
+      >
+        {{ recurringCopy.history }}
+      </button>
+      <button
+        id="show-recurring"
+        type="button"
+        class="secondary-button"
+        :aria-pressed="recurringSection"
+        :disabled="busy || recurringBusy"
+        @click="changeSection(true)"
+      >
+        {{ recurringCopy.title }}
+      </button>
     </div>
-    <p v-if="notice" class="notice" role="status">{{ text[notice] }}</p>
-    <TransactionEditor
-      v-if="editing"
-      :item="item"
-      :kind="kind"
-      :defaults="defaults"
-      :busy="busy"
-      :fields="fieldErrors"
-      @save="save"
-      @cancel="closeEditor"
-      @error="handleError"
+    <RecurringPanel
+      v-if="recurringSection"
+      @expired="emit('expired')"
+      @busy="recurringBusy = $event"
     />
-    <section
-      v-else-if="confirmation"
-      class="transaction-confirmation surface-panel"
-      aria-labelledby="delete-transaction-title"
-    >
-      <h2 id="delete-transaction-title" ref="confirmationHeading" tabindex="-1">
-        {{ text.deleteTitle }}
-      </h2>
-      <p class="confirmation-name">
-        {{ kindLabel(confirmation.kind) }} ·
-        <bdi>{{ formatMoney(confirmation.amount) }} {{ confirmation.currency }}</bdi>
-      </p>
-      <p dir="auto">{{ confirmation.account_name }}</p>
-      <p v-if="confirmation.kind === 'exchange' && confirmation.received_amount">
-        <bdi
-          >{{ formatMoney(confirmation.received_amount) }}
-          {{ receivedCurrency(confirmation.currency) }}</bdi
-        >
-      </p>
-      <p v-if="confirmation.destination" dir="auto">
-        {{ text.toAccount }}: {{ confirmation.destination_name }}
-      </p>
-      <p>{{ dateLabel(confirmation.date, language) }}</p>
-      <p class="field-help">{{ text.deleteHelp }}</p>
-      <div class="form-actions">
-        <PrimaryButton type="button" :busy="busy" @click="remove">{{
-          text.delete
-        }}</PrimaryButton><button
-          type="button"
-          class="secondary-button"
-          :disabled="busy"
-          @click="closeEditor"
-        >
-          {{ accountCopy.cancel }}
-        </button>
-      </div>
-    </section>
     <template v-else>
-      <div class="activity-add-actions">
-        <button
-          id="add-expense"
-          type="button"
-          class="primary-button compact-primary"
-          :disabled="busy"
-          @click="edit(null, 'expense', $event)"
-        >
-          {{ text.addExpense }}
-        </button>
-        <button
-          id="add-income"
-          type="button"
-          class="secondary-button"
-          :disabled="busy"
-          @click="edit(null, 'income', $event)"
-        >
-          {{ text.addIncome }}
-        </button>
-        <button
-          id="add-transfer"
-          type="button"
-          class="secondary-button"
-          :disabled="busy"
-          @click="edit(null, 'transfer', $event)"
-        >
-          {{ text.addTransfer }}
-        </button>
-        <button
-          id="add-exchange"
-          type="button"
-          class="secondary-button"
-          :disabled="busy"
-          @click="edit(null, 'exchange', $event)"
-        >
-          {{ text.addExchange }}
-        </button>
+      <BackButton
+        v-if="editing || confirmation"
+        :label="text.back"
+        :disabled="busy"
+        @click="closeEditor"
+      />
+      <div
+        v-if="error || conflict"
+        ref="errorSummary"
+        class="error-summary"
+        role="alert"
+        tabindex="-1"
+      >
+        {{ conflict ? text.conflict : fieldErrors.amount ? text.amountError : error }}
       </div>
-      <ActivityFilters
-        :key="filterRouteVersion"
-        v-model="filters"
+      <p v-if="notice" class="notice" role="status">{{ text[notice] }}</p>
+      <TransactionEditor
+        v-if="editing"
+        :item="item"
+        :kind="kind"
+        :defaults="defaults"
         :busy="busy"
         :fields="fieldErrors"
-        @apply="applyFilters()"
-        @clear="applyFilters(true)"
+        @save="save"
+        @cancel="closeEditor"
         @error="handleError"
       />
-      <p v-if="busy" role="status">{{ accountCopy.loading }}</p>
-      <button v-if="!records && !busy" type="button" class="secondary-button" @click="load()">
-        {{ accountCopy.retry }}
-      </button>
-      <div v-if="records && !records.count" class="accounts-empty">
-        <h2>{{ filtered ? text.noMatches : text.empty }}</h2>
-        <p>{{ filtered ? text.noMatchesHelp : text.emptyHelp }}</p>
-      </div>
-      <ul v-if="records?.count" class="transaction-list surface-panel">
-        <li v-for="record in records.results" :key="record.id" class="transaction-row">
-          <span class="transaction-direction" :class="`transaction-${record.kind}`"
-            ><ControlIcon :name="record.kind"
-          /></span>
-          <div class="transaction-description">
-            <h2>
-              {{ kindLabel(record.kind)
-              }}<span v-if="record.category">
-                ·
-                {{
-                  categoryName(
-                    { name_en: record.category_name_en, name_ar: record.category_name_ar },
-                    language,
-                  )
-                }}</span
-              >
-            </h2>
-            <p>
-              <span v-if="record.destination">{{ text.fromAccount }}: </span>
-              <span dir="auto">{{ record.account_name }}</span><span v-if="record.account_archived">
-                ({{ text.archived }})</span
-              >
-            </p>
-            <p v-if="record.destination">
-              {{ text.toAccount }}: <span dir="auto">{{ record.destination_name }}</span>
-              <span v-if="record.destination_archived"> ({{ text.archived }})</span>
-            </p>
-            <time :datetime="record.date">{{ dateLabel(record.date, language) }}</time>
-            <p v-if="record.debt" dir="auto">{{ record.debt_person_name }}</p>
-            <p v-if="record.exchange_rate">
-              <bdi>1 USD = {{ record.exchange_rate }} IQD</bdi>
-            </p>
-            <p v-if="record.note" class="transaction-note" dir="auto">{{ record.note }}</p>
-          </div>
-          <div class="transaction-value" :class="`transaction-${record.kind}`">
-            <bdi
-              >{{
-                record.kind === 'transfer'
-                  ? ''
-                  : record.kind === 'income' || record.kind === 'debt_in'
-                    ? '+'
-                    : '−'
-              }}{{ formatMoney(record.amount) }}</bdi
-            ><span class="currency-badge">{{ record.currency }}</span>
-            <template v-if="record.kind === 'exchange' && record.received_amount">
-              <bdi>+{{ formatMoney(record.received_amount) }}</bdi>
-              <span class="currency-badge">{{ receivedCurrency(record.currency) }}</span>
-            </template>
-          </div>
-          <div class="transaction-row-actions">
-            <a v-if="record.debt" class="secondary-button" :href="`#/debts/${record.debt}`">{{
-              debtCopy.manage
-            }}</a>
-            <template v-else>
-              <button
-                :id="`edit-transaction-${record.id}`"
-                type="button"
-                class="secondary-button"
-                :disabled="busy"
-                :aria-label="`${accountCopy.edit}: ${record.account_name}, ${record.amount} ${record.currency}`"
-                @click="edit(record, record.kind, $event)"
-              >
-                {{ accountCopy.edit }}</button><button
-                :id="`delete-transaction-${record.id}`"
-                type="button"
-                class="text-button"
-                :disabled="busy"
-                :aria-label="`${text.delete}: ${record.account_name}, ${record.amount} ${record.currency}`"
-                @click="confirm(record, $event)"
-              >
-                {{ text.delete }}
-              </button>
-            </template>
-          </div>
-        </li>
-      </ul>
-      <PageControls
-        v-if="records"
-        :page="page"
-        :next="!!records.next"
-        :previous="!!records.previous"
-        :busy="busy"
-        @change="load"
-      />
-      <p class="field-help activity-opening-note">{{ text.openingNote }}</p>
+      <section
+        v-else-if="confirmation"
+        class="transaction-confirmation surface-panel"
+        aria-labelledby="delete-transaction-title"
+      >
+        <h2 id="delete-transaction-title" ref="confirmationHeading" tabindex="-1">
+          {{ text.deleteTitle }}
+        </h2>
+        <p class="confirmation-name">
+          {{ kindLabel(confirmation.kind) }} ·
+          <bdi>{{ formatMoney(confirmation.amount) }} {{ confirmation.currency }}</bdi>
+        </p>
+        <p dir="auto">{{ confirmation.account_name }}</p>
+        <p v-if="confirmation.kind === 'exchange' && confirmation.received_amount">
+          <bdi
+            >{{ formatMoney(confirmation.received_amount) }}
+            {{ receivedCurrency(confirmation.currency) }}</bdi
+          >
+        </p>
+        <p v-if="confirmation.destination" dir="auto">
+          {{ text.toAccount }}: {{ confirmation.destination_name }}
+        </p>
+        <p>{{ dateLabel(confirmation.date, language) }}</p>
+        <p class="field-help">{{ text.deleteHelp }}</p>
+        <div class="form-actions">
+          <PrimaryButton type="button" :busy="busy" @click="remove">{{
+            text.delete
+          }}</PrimaryButton><button
+            type="button"
+            class="secondary-button"
+            :disabled="busy"
+            @click="closeEditor"
+          >
+            {{ accountCopy.cancel }}
+          </button>
+        </div>
+      </section>
+      <template v-else>
+        <div class="activity-add-actions">
+          <button
+            id="add-expense"
+            type="button"
+            class="primary-button compact-primary"
+            :disabled="busy"
+            @click="edit(null, 'expense', $event)"
+          >
+            {{ text.addExpense }}
+          </button>
+          <button
+            id="add-income"
+            type="button"
+            class="secondary-button"
+            :disabled="busy"
+            @click="edit(null, 'income', $event)"
+          >
+            {{ text.addIncome }}
+          </button>
+          <button
+            id="add-transfer"
+            type="button"
+            class="secondary-button"
+            :disabled="busy"
+            @click="edit(null, 'transfer', $event)"
+          >
+            {{ text.addTransfer }}
+          </button>
+          <button
+            id="add-exchange"
+            type="button"
+            class="secondary-button"
+            :disabled="busy"
+            @click="edit(null, 'exchange', $event)"
+          >
+            {{ text.addExchange }}
+          </button>
+        </div>
+        <ActivityFilters
+          :key="filterRouteVersion"
+          v-model="filters"
+          :busy="busy"
+          :fields="fieldErrors"
+          @apply="applyFilters()"
+          @clear="applyFilters(true)"
+          @error="handleError"
+        />
+        <p v-if="busy" role="status">{{ accountCopy.loading }}</p>
+        <button v-if="!records && !busy" type="button" class="secondary-button" @click="load()">
+          {{ accountCopy.retry }}
+        </button>
+        <div v-if="records && !records.count" class="accounts-empty">
+          <h2>{{ filtered ? text.noMatches : text.empty }}</h2>
+          <p>{{ filtered ? text.noMatchesHelp : text.emptyHelp }}</p>
+        </div>
+        <ul v-if="records?.count" class="transaction-list surface-panel">
+          <li v-for="record in records.results" :key="record.id" class="transaction-row">
+            <span class="transaction-direction" :class="`transaction-${record.kind}`"
+              ><ControlIcon :name="record.kind"
+            /></span>
+            <div class="transaction-description">
+              <h2>
+                {{ kindLabel(record.kind)
+                }}<span v-if="record.category">
+                  ·
+                  {{
+                    categoryName(
+                      { name_en: record.category_name_en, name_ar: record.category_name_ar },
+                      language,
+                    )
+                  }}</span
+                >
+              </h2>
+              <p>
+                <span v-if="record.destination">{{ text.fromAccount }}: </span>
+                <span dir="auto">{{ record.account_name }}</span><span
+                  v-if="record.account_archived"
+                >
+                  ({{ text.archived }})</span
+                >
+              </p>
+              <p v-if="record.destination">
+                {{ text.toAccount }}: <span dir="auto">{{ record.destination_name }}</span>
+                <span v-if="record.destination_archived"> ({{ text.archived }})</span>
+              </p>
+              <time :datetime="record.date">{{ dateLabel(record.date, language) }}</time>
+              <p v-if="record.debt" dir="auto">{{ record.debt_person_name }}</p>
+              <p v-if="record.exchange_rate">
+                <bdi>1 USD = {{ record.exchange_rate }} IQD</bdi>
+              </p>
+              <p v-if="record.note" class="transaction-note" dir="auto">{{ record.note }}</p>
+            </div>
+            <div class="transaction-value" :class="`transaction-${record.kind}`">
+              <bdi
+                >{{
+                  record.kind === 'transfer'
+                    ? ''
+                    : record.kind === 'income' || record.kind === 'debt_in'
+                      ? '+'
+                      : '−'
+                }}{{ formatMoney(record.amount) }}</bdi
+              ><span class="currency-badge">{{ record.currency }}</span>
+              <template v-if="record.kind === 'exchange' && record.received_amount">
+                <bdi>+{{ formatMoney(record.received_amount) }}</bdi>
+                <span class="currency-badge">{{ receivedCurrency(record.currency) }}</span>
+              </template>
+            </div>
+            <div class="transaction-row-actions">
+              <a v-if="record.debt" class="secondary-button" :href="`#/debts/${record.debt}`">{{
+                debtCopy.manage
+              }}</a>
+              <template v-else>
+                <button
+                  :id="`edit-transaction-${record.id}`"
+                  type="button"
+                  class="secondary-button"
+                  :disabled="busy"
+                  :aria-label="`${accountCopy.edit}: ${record.account_name}, ${record.amount} ${record.currency}`"
+                  @click="edit(record, record.kind, $event)"
+                >
+                  {{ accountCopy.edit }}</button><button
+                  :id="`delete-transaction-${record.id}`"
+                  type="button"
+                  class="text-button"
+                  :disabled="busy"
+                  :aria-label="`${text.delete}: ${record.account_name}, ${record.amount} ${record.currency}`"
+                  @click="confirm(record, $event)"
+                >
+                  {{ text.delete }}
+                </button>
+              </template>
+            </div>
+          </li>
+        </ul>
+        <PageControls
+          v-if="records"
+          :page="page"
+          :next="!!records.next"
+          :previous="!!records.previous"
+          :busy="busy"
+          @change="load"
+        />
+        <p class="field-help activity-opening-note">{{ text.openingNote }}</p>
+      </template>
     </template>
   </section>
 </template>
