@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { language } from './preferences'
 
 const english = {
+  home: 'Home',
   overview: 'Overview',
   navigation: 'Main navigation',
   general: 'General',
@@ -28,6 +29,7 @@ const english = {
   themeReady: 'Your workspace, your way',
 }
 const arabic: typeof english = {
+  home: 'الرئيسية',
   overview: 'نظرة عامة',
   navigation: 'التنقل الرئيسي',
   general: 'عام',

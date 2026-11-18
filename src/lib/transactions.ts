@@ -37,6 +37,7 @@ export interface MoneyTransaction extends Omit<TransactionValues, 'timezone'> {
 }
 export interface ActivityFilters {
   account: string
+  category?: string
   kind: TransactionKind | ''
   currency: Currency | ''
   start: string

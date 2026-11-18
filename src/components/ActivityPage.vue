@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, onScopeDispose, ref } from 'vue'
+import { activityFiltersFromHash } from '../lib/activityRoute'
+import { activityLink } from '../lib/analytics'
 import { ApiError, apiRequest, type UserSettings } from '../lib/api'
 import { formatMoney, type RecordPage } from '../lib/accounts'
 import { categoryName } from '../lib/categories'
@@ -27,9 +29,17 @@ import ControlIcon from './ControlIcon.vue'
 
 const TransactionEditor = defineAsyncComponent(() => import('./TransactionEditor.vue'))
 const emit = defineEmits<{ expired: [] }>()
-const emptyFilters = (): Filters => ({ account: '', kind: '', currency: '', start: '', end: '' })
-const filters = ref(emptyFilters())
-const applied = ref(emptyFilters())
+const emptyFilters = (): Filters => ({
+  account: '',
+  category: '',
+  kind: '',
+  currency: '',
+  start: '',
+  end: '',
+})
+const filters = ref(activityFiltersFromHash(window.location.hash))
+const applied = ref({ ...filters.value })
+const filterRouteVersion = ref(0)
 const filtered = computed(() => Object.values(applied.value).some(Boolean))
 const records = ref<RecordPage<MoneyTransaction> | null>(null)
 const page = ref(1)
@@ -52,6 +62,7 @@ const conflict = ref(false)
 const notice = ref<'saved' | 'deleted' | ''>('')
 let triggerId = ''
 let requestId = ''
+let pendingRouteRead = false
 function clearError(): void {
   conflict.value = false
   clearErrors()
@@ -79,7 +90,10 @@ async function handleError(cause: unknown): Promise<void> {
   await showError(cause)
 }
 async function fetchRecords(value = 1): Promise<void> {
-  records.value = await getTransactions(applied.value, value)
+  const requested = { ...applied.value }
+  const result = await getTransactions(requested, value)
+  if (JSON.stringify(requested) !== JSON.stringify(applied.value)) return
+  records.value = result
   page.value = value
 }
 async function load(value = 1): Promise<void> {
@@ -94,11 +108,16 @@ async function load(value = 1): Promise<void> {
     await handleError(cause)
   } finally {
     busy.value = false
+    if (pendingRouteRead) {
+      pendingRouteRead = false
+      await load()
+    }
   }
 }
 async function applyFilters(clear = false): Promise<void> {
   if (busy.value) return
   if (clear) filters.value = emptyFilters()
+  window.history.replaceState(null, '', activityLink(filters.value))
   applied.value = { ...filters.value }
   await load()
 }
@@ -192,6 +211,20 @@ onMounted(async () => {
   heading.value?.focus()
   await load()
 })
+const onRouteChange = (): void => {
+  if (window.location.hash.split('?')[0] !== '#/activity') return
+  filters.value = activityFiltersFromHash(window.location.hash)
+  applied.value = { ...filters.value }
+  // Route changes may select an item outside the picker's loaded page.
+  // Remount the filter panel so each bounded picker resolves that selected item.
+  filterRouteVersion.value += 1
+  if (!editing.value && !confirmation.value) {
+    if (busy.value) pendingRouteRead = true
+    else void load()
+  }
+}
+window.addEventListener('hashchange', onRouteChange)
+onScopeDispose(() => window.removeEventListener('hashchange', onRouteChange))
 </script>
 
 <template>
@@ -313,6 +346,7 @@ onMounted(async () => {
         </button>
       </div>
       <ActivityFilters
+        :key="filterRouteVersion"
         v-model="filters"
         :busy="busy"
         :fields="fieldErrors"

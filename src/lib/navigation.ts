@@ -1,10 +1,12 @@
 import { onScopeDispose, ref } from 'vue'
 
-export type Page = 'home' | 'settings' | 'preferences' | 'accounts' | 'activity' | 'debts'
+export type Page =
+  'home' | 'settings' | 'preferences' | 'accounts' | 'activity' | 'debts' | 'analytics'
 
 export function pageFromHash(hash: string): Page {
   if (/^#\/debts(?:\/[1-9]\d*)?$/.test(hash)) return 'debts'
-  if (hash === '#/activity') return 'activity'
+  if (hash.split('?')[0] === '#/activity') return 'activity'
+  if (hash === '#/analytics') return 'analytics'
   if (hash === '#/accounts') return 'accounts'
   if (hash === '#/settings') return 'settings'
   if (hash === '#/preferences') return 'preferences'

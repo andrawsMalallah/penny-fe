@@ -31,6 +31,9 @@
   flex: 1;
   padding: 0 16px 28px;
 }
+.navigation-short-label {
+  display: none;
+}
 .workspace-destinations > a {
   display: flex;
   align-items: center;
@@ -533,7 +536,7 @@
   }
   .workspace-destinations {
     flex-direction: row;
-    gap: 4px;
+    gap: 2px;
     padding: 0;
   }
   .workspace-destinations > a {
@@ -561,8 +564,19 @@
   }
 }
 @media (max-width: 360px) {
+  .workspace-navigation {
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
   .workspace-destinations > a {
     font-size: 11px;
+    padding-inline: 0;
+  }
+  .workspace-destinations .navigation-full-label {
+    display: none;
+  }
+  .workspace-destinations .navigation-short-label {
+    display: inline;
   }
 }
 @media (max-width: 767px) {

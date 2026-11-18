@@ -5,6 +5,7 @@ import { accountCopy } from '../lib/accountCopy'
 import { copy } from '../lib/copy'
 import { activityCopy } from '../lib/activityCopy'
 import { debtCopy } from '../lib/debtCopy'
+import { analyticsCopy } from '../lib/analyticsCopy'
 import ControlIcon from './ControlIcon.vue'
 defineProps<{ page: Page }>()
 const emit = defineEmits<{ navigate: [page: Page] }>()
@@ -17,9 +18,13 @@ const emit = defineEmits<{ navigate: [page: Page] }>()
     <div class="workspace-destinations">
       <a
         href="#/"
+        :aria-label="text.overview"
         :aria-current="page === 'home' ? 'page' : undefined"
         @click.prevent="emit('navigate', 'home')"
-        ><ControlIcon name="home" /><span>{{ text.overview }}</span></a
+        ><ControlIcon name="home" /><span class="navigation-full-label" aria-hidden="true">{{
+          text.overview
+        }}</span
+        ><span class="navigation-short-label" aria-hidden="true">{{ text.home }}</span></a
       >
       <a
         href="#/accounts"
@@ -38,6 +43,18 @@ const emit = defineEmits<{ navigate: [page: Page] }>()
         :aria-current="page === 'debts' ? 'page' : undefined"
         @click.prevent="emit('navigate', 'debts')"
         ><ControlIcon name="debts" /><span>{{ debtCopy.title }}</span></a
+      >
+      <a
+        href="#/analytics"
+        :aria-label="analyticsCopy.title"
+        :aria-current="page === 'analytics' ? 'page' : undefined"
+        @click.prevent="emit('navigate', 'analytics')"
+        ><ControlIcon name="analytics" /><span class="navigation-full-label" aria-hidden="true">{{
+          analyticsCopy.title
+        }}</span
+        ><span class="navigation-short-label" aria-hidden="true">{{
+          analyticsCopy.shortTitle
+        }}</span></a
       >
       <a
         href="#/settings"

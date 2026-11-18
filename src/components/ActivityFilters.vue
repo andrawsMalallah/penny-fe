@@ -1,12 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ActivityFilters } from '../lib/transactions'
 import { activityCopy as text } from '../lib/activityCopy'
 import { debtCopy } from '../lib/debtCopy'
+import { analyticsCopy } from '../lib/analyticsCopy'
 import AccountSelect from './AccountSelect.vue'
 import SelectControl from './SelectControl.vue'
 import FormField from './FormField.vue'
 const filters = defineModel<ActivityFilters>({ required: true })
 const props = defineProps<{ busy: boolean; fields: Record<string, string[]> }>()
+const category = computed({
+  get: () => filters.value.category ?? '',
+  set: (value: string) => {
+    filters.value.category = value
+  },
+})
 defineEmits<{ apply: []; clear: []; error: [cause: unknown] }>()
 function fieldError(field: string): string | undefined {
   return props.fields[field]?.length ? text.value.invalidField : undefined
@@ -29,6 +37,19 @@ function fieldError(field: string): string | undefined {
             :described-by="fieldError('account') ? 'activity-account-description' : undefined"
             @error="$emit('error', $event)"
         /></FormField>
+        <FormField id="activity-category" :label="text.category" :error="fieldError('category')">
+          <AccountSelect
+            id="activity-category"
+            v-model="category"
+            resource="expense-categories"
+            :empty-label="analyticsCopy.allCategories"
+            :disabled="busy"
+            include-archived
+            :invalid="!!fieldError('category')"
+            :described-by="fieldError('category') ? 'activity-category-description' : undefined"
+            @error="$emit('error', $event)"
+          />
+        </FormField>
         <FormField id="activity-kind" :label="text.kind" :error="fieldError('kind')"
           ><SelectControl id="activity-kind" v-model="filters.kind" :disabled="busy"
             ><option value="">{{ text.allTypes }}</option>
