@@ -2,6 +2,14 @@
 
 Vue 3 SPA with TypeScript/Vite. Authentication includes registration, email verification, sign-in, verified profile/welcome, logout, email-code password recovery, signed-in devices with sign-out-all and optional authenticator 2FA. Arabic RTL/English LTR and System/Light/Dark themes follow the approved Penny design. Accounts/groups, opening balances, categories, Activity, transfers, exchanges, debts, repayments, account targets and analytics are implemented.
 
+## Activity CSV export
+
+Activity's **Export CSV** opens a lazy review panel using a captured copy of the applied filters, across all pages. Draft filter changes do not affect it. The API supplies the matching count; empty matches disable Download. A changed count requires review and another explicit download. Existing rows are exported as current at generation time. The file follows the current app language, with original names/notes, fixed dates, exact original-currency amounts and separate exchange details. Import large amounts as text to retain every digit in a spreadsheet.
+
+The panel reuses shared controls/styles for English/Arabic, RTL/LTR and both themes. Back restores focus; leaving cancels the download and ignores late count results. Read/download failures offer explicit retries, clear errors on retry and never surface raw responses. Expired sessions follow the existing auth check. File blobs and temporary object URLs are transient and released after the browser starts downloading; no financial browser storage or server export history is added. The shared API helper accepts CSV and structured JSON errors without automatically replaying requests.
+
+Local verification: 114 frontend tests, lint, formatting and the typechecked production build pass. Local fixture-based browser checks cover 48 export screens plus 72 Activity and 72 Analytics regressions across English/Arabic, light/dark and six phone/tablet/desktop sizes. Physical-device download acceptance remains separate. No packages or CI changes were made.
+
 ## Recurring income and expenses
 
 Activity has Transactions and lazy Recurring sections, with no new navbar destination. Recurring shows paginated/status-filtered schedules and bounded per-schedule pending dates. Add/edit saves a name, income/expense details, weekly/monthly/yearly timing, a valid past/current/future start and optional inclusive end. Missing dates use month-end without anchor drift. Timing edits change future dates only; metadata edits update pending items, while recorded transactions remain unchanged.

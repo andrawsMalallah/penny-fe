@@ -147,6 +147,29 @@ function safeFields(payload: unknown): Record<string, string[]> {
   return fields
 }
 
+async function checkedResponse(response: Response): Promise<Response> {
+  if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => null)
+    if (response.status === 403) csrfToken = ''
+    throw new ApiError(response.status, safeFields(payload))
+  }
+  return response
+}
+
+export async function apiDownload(path: string, signal: AbortSignal): Promise<Blob> {
+  const response = await checkedResponse(
+    await fetch(`/api/v1/${path}`, {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      signal,
+      headers: { Accept: 'text/csv, application/json' },
+    }),
+  )
+  if (!response.headers.get('Content-Type')?.startsWith('text/csv')) throw new ApiError(502, {})
+  return response.blob()
+}
+
 export async function apiRequest<T>(path: string, body?: unknown): Promise<T> {
   if (body !== undefined && !csrfToken) await initializeSession()
   const response = await fetch(`/api/v1/${path}`, {
@@ -161,12 +184,8 @@ export async function apiRequest<T>(path: string, body?: unknown): Promise<T> {
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   })
-  if (!response.ok) {
-    const payload: unknown = await response.json().catch(() => null)
-    // Refresh CSRF for the next user action; never replay a mutation automatically.
-    if (response.status === 403) csrfToken = ''
-    throw new ApiError(response.status, safeFields(payload))
-  }
+  // Refresh CSRF for the next user action; never replay a mutation automatically.
+  await checkedResponse(response)
   if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
 }

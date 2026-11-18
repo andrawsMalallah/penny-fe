@@ -11,6 +11,7 @@ import { language } from '../lib/preferences'
 import { receivedCurrency } from '../lib/exchanges'
 import { debtCopy } from '../lib/debtCopy'
 import { recurringCopy } from '../lib/recurringCopy'
+import { exportCopy } from '../lib/exportCopy'
 import {
   dateLabel,
   getTransactions,
@@ -30,6 +31,8 @@ import ControlIcon from './ControlIcon.vue'
 
 const TransactionEditor = defineAsyncComponent(() => import('./TransactionEditor.vue'))
 const RecurringPanel = defineAsyncComponent(() => import('./RecurringPanel.vue'))
+const ActivityExport = defineAsyncComponent(() => import('./ActivityExport.vue'))
+const exporting = ref(false)
 const recurringSection = ref(false)
 const recurringBusy = ref(false)
 async function changeSection(value: boolean): Promise<void> {
@@ -155,6 +158,7 @@ async function edit(
   }
 }
 async function closeEditor(): Promise<void> {
+  exporting.value = false
   editing.value = false
   confirmation.value = null
   item.value = null
@@ -196,6 +200,13 @@ async function confirm(record: MoneyTransaction, event: Event): Promise<void> {
   await nextTick()
   confirmationHeading.value?.focus()
 }
+function openExport(): void {
+  if (busy.value) return
+  triggerId = 'export-activity'
+  clearError()
+  notice.value = ''
+  exporting.value = true
+}
 async function remove(): Promise<void> {
   if (busy.value || !confirmation.value) return
   busy.value = true
@@ -223,6 +234,7 @@ onMounted(async () => {
 const onRouteChange = (): void => {
   if (window.location.hash.split('?')[0] !== '#/activity') return
   recurringSection.value = false
+  exporting.value = false
   filters.value = activityFiltersFromHash(window.location.hash)
   applied.value = { ...filters.value }
   // Route changes may select an item outside the picker's loaded page.
@@ -245,7 +257,7 @@ onScopeDispose(() => window.removeEventListener('hashchange', onRouteChange))
         <p>{{ text.intro }}</p>
       </div>
       <RefreshButton
-        v-if="!recurringSection && !editing && !confirmation"
+        v-if="!recurringSection && !editing && !confirmation && !exporting"
         :label="text.refresh"
         :busy="busy"
         icon-only
@@ -253,7 +265,7 @@ onScopeDispose(() => window.removeEventListener('hashchange', onRouteChange))
       />
     </div>
     <div
-      v-if="!editing && !confirmation"
+      v-if="!editing && !confirmation && !exporting"
       class="activity-sections"
       role="group"
       :aria-label="text.title"
@@ -285,7 +297,7 @@ onScopeDispose(() => window.removeEventListener('hashchange', onRouteChange))
     />
     <template v-else>
       <BackButton
-        v-if="editing || confirmation"
+        v-if="editing || confirmation || exporting"
         :label="text.back"
         :disabled="busy"
         @click="closeEditor"
@@ -300,8 +312,14 @@ onScopeDispose(() => window.removeEventListener('hashchange', onRouteChange))
         {{ conflict ? text.conflict : fieldErrors.amount ? text.amountError : error }}
       </div>
       <p v-if="notice" class="notice" role="status">{{ text[notice] }}</p>
+      <ActivityExport
+        v-if="exporting"
+        :filters="applied"
+        @error="handleError"
+        @clear="clearError"
+      />
       <TransactionEditor
-        v-if="editing"
+        v-else-if="editing"
         :item="item"
         :kind="kind"
         :defaults="defaults"
@@ -376,6 +394,15 @@ onScopeDispose(() => window.removeEventListener('hashchange', onRouteChange))
             @click="edit(null, 'transfer', $event)"
           >
             {{ text.addTransfer }}
+          </button>
+          <button
+            id="export-activity"
+            type="button"
+            class="secondary-button"
+            :disabled="busy || !records"
+            @click="openExport"
+          >
+            {{ exportCopy.title }}
           </button>
           <button
             id="add-exchange"
