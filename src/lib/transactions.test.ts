@@ -8,6 +8,7 @@ describe('transaction dates and API reads', () => {
     expect(localDate(new Date(2026, 0, 2, 0, 1))).toBe('2026-01-02')
     expect(localDate(new Date(2026, 10, 17, 23, 59))).toBe('2026-11-17')
     expect(dateLabel('2026-01-02', 'en')).toMatch(/Jan 2, 2026/)
+    expect(dateLabel('0001-02-01', 'en')).toBe('Feb 1, 1')
   })
   it('encodes only supplied filters and reads fresh server data', async () => {
     const result = { count: 0, results: [], next: null, previous: null }

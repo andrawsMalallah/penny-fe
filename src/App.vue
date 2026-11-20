@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { defineAsyncComponent, ref, watch } from 'vue'
-import AppHeader from './components/AppHeader.vue'
-import AuthFlow from './components/AuthFlow.vue'
-import AuthShowcase from './components/AuthShowcase.vue'
-import WorkspaceNavigation from './components/WorkspaceNavigation.vue'
-import AppFooter from './components/GuestFooter.vue'
+import AppHeader from './components/layout/AppHeader.vue'
+import AuthFlow from './components/auth/AuthFlow.vue'
+import AuthShowcase from './components/auth/AuthShowcase.vue'
+import WorkspaceNavigation from './components/layout/WorkspaceNavigation.vue'
+import AppFooter from './components/layout/AppFooter.vue'
 import { copy } from './lib/copy'
 import { accountCopy } from './lib/accountCopy'
 import { designCopy } from './lib/designCopy'
@@ -17,14 +17,16 @@ import { initializePreferences, language } from './lib/preferences'
 import { useWorkspaceSession } from './lib/useWorkspaceSession'
 
 initializePreferences()
-const SettingsPage = defineAsyncComponent(() => import('./components/SettingsPage.vue'))
-const AccountsPage = defineAsyncComponent(() => import('./components/AccountsPage.vue'))
-const ActivityPage = defineAsyncComponent(() => import('./components/ActivityPage.vue'))
-const DebtsPage = defineAsyncComponent(() => import('./components/DebtsPage.vue'))
-const AnalyticsPage = defineAsyncComponent(() => import('./components/AnalyticsPage.vue'))
-const BudgetsPage = defineAsyncComponent(() => import('./components/BudgetsPage.vue'))
-const OverviewPage = defineAsyncComponent(() => import('./components/OverviewPage.vue'))
-const PreferencesPage = defineAsyncComponent(() => import('./components/PreferencesPage.vue'))
+const SettingsPage = defineAsyncComponent(() => import('./components/settings/SettingsPage.vue'))
+const AccountsPage = defineAsyncComponent(() => import('./components/accounts/AccountsPage.vue'))
+const ActivityPage = defineAsyncComponent(() => import('./components/activity/ActivityPage.vue'))
+const DebtsPage = defineAsyncComponent(() => import('./components/debts/DebtsPage.vue'))
+const AnalyticsPage = defineAsyncComponent(() => import('./components/analytics/AnalyticsPage.vue'))
+const BudgetsPage = defineAsyncComponent(() => import('./components/budgets/BudgetsPage.vue'))
+const OverviewPage = defineAsyncComponent(() => import('./components/overview/OverviewPage.vue'))
+const PreferencesPage = defineAsyncComponent(
+  () => import('./components/settings/PreferencesPage.vue'),
+)
 const { page, navigate } = useNavigation()
 const errorSummary = ref<HTMLElement | null>(null)
 const {

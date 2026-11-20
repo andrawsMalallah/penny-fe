@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import markup from '../../index.html?raw'
+import bootstrap from '../../public/theme-bootstrap.js?raw'
 
-const bootstrap = markup.match(/<script>([\s\S]*?)<\/script>/)?.[1]
 function runInNewContext(script: string, environment: Record<string, unknown>): void {
   // Execute the actual local HTML bootstrap with isolated browser fixtures.
   new Function(...Object.keys(environment), script)(...Object.values(environment))
 }
 describe('appearance before first paint', () => {
+  it('loads the local bootstrap synchronously without CSP inline-script permission', () => {
+    expect(markup).toContain('<script src="/theme-bootstrap.js"></script>')
+    expect(markup).not.toMatch(/<script>/)
+  })
   it.each([
     ['dark', false, 'dark'],
     ['light', true, 'light'],

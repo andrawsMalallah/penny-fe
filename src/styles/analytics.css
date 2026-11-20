@@ -4,6 +4,63 @@
   display: grid;
   gap: 24px;
 }
+.monthly-review,
+.monthly-budgets {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.monthly-review .panel-heading > div,
+.monthly-currency,
+.monthly-metric {
+  min-width: 0;
+}
+.monthly-currency h4,
+.monthly-budgets h4 {
+  overflow-wrap: anywhere;
+}
+.monthly-metric {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+}
+.monthly-metric dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-block: 12px;
+}
+.monthly-metric dt {
+  color: var(--muted);
+}
+.monthly-metric dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.monthly-categories {
+  display: grid;
+  gap: 20px;
+  padding-inline-start: 20px;
+}
+.monthly-categories a,
+.monthly-categories bdi {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.monthly-categories bdi {
+  margin-block: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.monthly-currency a {
+  color: var(--accent);
+}
+.monthly-metric > a,
+.monthly-categories a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 .analytics-heading {
   display: flex;
   align-items: center;

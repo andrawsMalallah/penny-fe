@@ -57,9 +57,12 @@ export function localDate(now = new Date()): string {
 export function dateLabel(value: string, language: 'en' | 'ar'): string {
   // Construct the calendar date locally; parsing YYYY-MM-DD as UTC shifts it in western zones.
   const [year, month, day] = value.split('-').map(Number)
+  const calendar = new Date(0)
+  calendar.setFullYear(year!, month! - 1, day!)
+  calendar.setHours(12, 0, 0, 0)
   return new Intl.DateTimeFormat(language === 'ar' ? 'ar-IQ-u-ca-gregory' : 'en', {
     dateStyle: 'medium',
-  }).format(new Date(year!, month! - 1, day!, 12))
+  }).format(calendar)
 }
 export async function newRequestId(): Promise<string> {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
