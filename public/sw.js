@@ -1,4 +1,4 @@
-const CACHE_NAME = 'penny-shell-v3';
+const CACHE_NAME = 'penny-shell-v4';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/penny-mark.svg', '/penny-icon-192.png', '/penny-icon-512.png'];
 
 self.addEventListener('install', (event) => {

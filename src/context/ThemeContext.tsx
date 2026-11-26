@@ -43,11 +43,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
+    const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     if (resolvedTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
+    if (themeColor) themeColor.content = resolvedTheme === 'dark' ? '#020617' : '#f8fafc';
   }, [resolvedTheme]);
 
   const setAppearance = useCallback((pref: AppearancePreference) => {

@@ -182,6 +182,37 @@
   }
 }
 
+@layer components {
+  .penny-page-tabs {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+  }
+
+  .penny-page-tabs > button {
+    flex: 1 1 0%;
+    min-width: 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  @media (min-width: 1024px) {
+    .penny-page-tabs {
+      width: max-content;
+      max-width: 100%;
+    }
+
+    .penny-page-tabs > button {
+      flex: none;
+      overflow-wrap: normal;
+      white-space: nowrap;
+    }
+  }
+}
+
 @layer utilities {
   select:not([multiple]) {
     padding-inline-end: 2.25rem;

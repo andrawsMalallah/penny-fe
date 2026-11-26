@@ -43,7 +43,7 @@ import type {
 import type { CurrencyCode } from '../utils/money';
 
 export const authApi = {
-  getSession: () => apiRequest<SessionResponse>('/api/v1/auth/session/'),
+  getSession: () => apiRequest<SessionResponse>('/api/v1/auth/session/', { cache: 'no-store' }),
   getMe: () => apiRequest<UserProfile>('/api/v1/auth/me/'),
   register: (payload: {
     display_name: string;
@@ -70,6 +70,13 @@ export const authApi = {
   listSessions: (page = 1) =>
     apiRequest<PaginatedResponse<UserSessionItem>>('/api/v1/auth/sessions/', {
       query: { page },
+    }),
+  requestAccountDeletion: () =>
+    apiRequest<{ detail?: string }>('/api/v1/auth/account-deletion/request/', { method: 'POST' }),
+  confirmAccountDeletion: (code: string) =>
+    apiRequest<void>('/api/v1/auth/account-deletion/confirm/', {
+      method: 'POST',
+      body: { code, confirmation: true },
     }),
 
   getTwoFactorStatus: () => apiRequest<TwoFactorStatus>('/api/v1/auth/2fa/'),
@@ -136,7 +143,7 @@ export const accountsApi = {
       body: { archived },
     }),
 
-  listAccounts: (params?: { archived?: 'false' | 'true' | 'all'; page?: number }) =>
+  listAccounts: (params?: { archived?: 'false' | 'true' | 'all'; group?: number; page?: number }) =>
     apiRequest<PaginatedResponse<Account>>('/api/v1/accounts/', { query: params }),
   listAllAccounts: (archived: 'false' | 'true' | 'all' = 'false') =>
     fetchAllPaginated((page) => accountsApi.listAccounts({ archived, page })),

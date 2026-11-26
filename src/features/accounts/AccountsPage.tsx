@@ -26,6 +26,7 @@ export function AccountsPage() {
   const [tab, setTab] = useState<SetupTab>('accounts');
   const [archivedFilter, setArchivedFilter] = useState<ArchiveFilter>('false');
   const [page, setPage] = useState(1);
+  const [selectedGroup, setSelectedGroup] = useState<AccountGroup | null>(null);
 
   const [accountsRes, setAccountsRes] = useState<PaginatedResponse<Account> | null>(null);
   const [groupsRes, setGroupsRes] = useState<PaginatedResponse<AccountGroup> | null>(null);
@@ -81,7 +82,11 @@ export function AccountsPage() {
       const groupsForSelect = await accountsApi.listAllGroups('false');
       setAllGroups(groupsForSelect);
       if (tab === 'accounts') {
-        setAccountsRes(await accountsApi.listAccounts({ archived: archivedFilter, page }));
+        setAccountsRes(await accountsApi.listAccounts({
+          archived: archivedFilter,
+          group: selectedGroup?.id,
+          page,
+        }));
       } else if (tab === 'groups') {
         setGroupsRes(await accountsApi.listGroups({ archived: archivedFilter, page }));
       } else {
@@ -92,7 +97,7 @@ export function AccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [tab, archivedFilter, page]);
+  }, [tab, archivedFilter, page, selectedGroup]);
 
   useEffect(() => {
     void loadData();
@@ -288,10 +293,10 @@ export function AccountsPage() {
       )}
 
       {/* Tabs + Archive Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div
           role="tablist"
-          className="inline-flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-200/70 dark:bg-slate-800/80 max-w-full"
+          className="penny-page-tabs bg-slate-200/70 dark:bg-slate-800/80"
         >
           {(
             [
@@ -309,8 +314,9 @@ export function AccountsPage() {
                 setTab(item.key);
                 setPage(1);
                 setNotice(null);
+                if (item.key !== 'accounts') setSelectedGroup(null);
               }}
-              className={`min-h-[44px] px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`min-h-[44px] px-1.5 sm:px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 tab === item.key
                   ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
@@ -321,7 +327,7 @@ export function AccountsPage() {
           ))}
         </div>
 
-        <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-200/70 dark:bg-slate-800/80 self-start">
+        <div className="penny-page-tabs bg-slate-200/70 dark:bg-slate-800/80">
           {(
             [
               { key: 'false', label: t.common.active },
@@ -338,7 +344,7 @@ export function AccountsPage() {
                   setArchivedFilter(val);
                   setPage(1);
                 }}
-                className={`min-h-[44px] px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`min-h-[44px] px-1.5 sm:px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   archivedFilter === val
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400'
@@ -353,22 +359,27 @@ export function AccountsPage() {
 
       <ErrorAlert error={error} onRetry={() => void loadData()} />
 
+      {tab === 'accounts' && selectedGroup && (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+          <span>
+            {t.accounts.groupName}:{' '}
+            <strong className="text-slate-900 dark:text-slate-100">{selectedGroup.name}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => { setSelectedGroup(null); setPage(1); }}
+            className="min-h-[40px] px-2 text-emerald-700 dark:text-emerald-400 font-medium hover:underline"
+          >
+            {t.common.resetFilters}
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <LoadingRows rows={4} />
       ) : tab === 'accounts' ? (
         !accountsRes || accountsRes.results.length === 0 ? (
-          <EmptyState
-            title={t.common.noData}
-            action={
-              <button
-                type="button"
-                onClick={() => openAccountModal(null)}
-                className="min-h-[40px] px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium"
-              >
-                {t.accounts.newAccount}
-              </button>
-            }
-          />
+          <EmptyState title={t.common.noData} />
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -512,9 +523,18 @@ export function AccountsPage() {
             {groupsRes.results.map((grp) => (
               <div key={grp.id} className="p-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedGroup(grp);
+                      setArchivedFilter('all');
+                      setTab('accounts');
+                      setPage(1);
+                    }}
+                    className="text-start text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
+                  >
                     {grp.name}
-                  </p>
+                  </button>
                   {grp.archived && (
                     <p className="text-xs text-slate-500 dark:text-slate-400">{t.common.archived}</p>
                   )}
@@ -568,29 +588,7 @@ export function AccountsPage() {
           </div>
         )
       ) : !categoriesRes || categoriesRes.results.length === 0 ? (
-        <EmptyState
-          title={t.common.noData}
-          action={
-            <button
-              type="button"
-              onClick={() => {
-                setConfirmError(null);
-                setConfirmState({
-                  title: t.accounts.initializeCategoriesConfirmTitle,
-                  body: t.accounts.initializeCategoriesConfirmBody,
-                  confirmLabel: t.accounts.initializeCategories,
-                  action: async () => {
-                    await accountsApi.initializeCategories();
-                    setNotice(t.accounts.categoriesInitialized);
-                  },
-                });
-              }}
-              className="min-h-[40px] px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium"
-            >
-              {t.accounts.initializeCategories}
-            </button>
-          }
-        />
+        <EmptyState title={t.common.noData} />
       ) : (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
           {categoriesRes.results.map((cat) => (

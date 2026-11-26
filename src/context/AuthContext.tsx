@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { ApiError, clearCsrfToken, refreshCsrfToken } from '../api/client';
 import { authApi, settingsApi } from '../api/endpoints';
 import type { UserProfile, UserSettings } from '../api/types';
+import { getStartupSession } from './sessionStartup';
 
 const PENDING_EMAIL_KEY = 'penny.pending-email';
 
@@ -32,6 +33,7 @@ interface AuthContextValue {
   settings: UserSettings | null;
   backendUnavailable: boolean;
   authError: string | null;
+  sessionCheckFailed: boolean;
   refreshSession: () => Promise<void>;
   refreshSettings: () => Promise<void>;
   setAuthenticatedUser: (user: UserProfile | null, twoFactorPending?: boolean) => void;
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [backendUnavailable, setBackendUnavailable] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [sessionCheckFailed, setSessionCheckFailed] = useState(false);
 
   const refreshSettings = useCallback(async () => {
     try {
@@ -63,7 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthError(null);
     try {
       await refreshCsrfToken();
-      const session = await authApi.getSession();
+      const session = await getStartupSession(authApi.getSession);
+      setSessionCheckFailed(false);
       setBackendUnavailable(false);
       setUser(session.user);
       setTwoFactorPending(Boolean(session.two_factor_pending));
@@ -74,15 +78,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSettings(null);
       }
     } catch (err) {
+      setSessionCheckFailed(true);
       if (err instanceof ApiError && err.isServiceUnavailable) {
         setBackendUnavailable(true);
         setAuthError(err.message);
       } else if (err instanceof Error) {
         setAuthError(err.message);
       }
-      setUser(null);
-      setTwoFactorPending(false);
-      setSettings(null);
+      // A failed check cannot prove that the browser session ended.
     } finally {
       setLoading(false);
     }
@@ -97,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(nextUser);
       setTwoFactorPending(nextTwoFactorPending);
       setBackendUnavailable(false);
+      setSessionCheckFailed(false);
       if (nextUser) {
         writePendingEmail('');
         void refreshSettings();
@@ -113,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setTwoFactorPending(false);
     setSettings(null);
+    setSessionCheckFailed(false);
   }, []);
 
   return (
@@ -124,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         settings,
         backendUnavailable,
         authError,
+        sessionCheckFailed,
         refreshSession,
         refreshSettings,
         setAuthenticatedUser,

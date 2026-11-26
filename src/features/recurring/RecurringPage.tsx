@@ -258,7 +258,7 @@ export function RecurringPage() {
         {t.recurring.manualPostingNotice}
       </p>
 
-      <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-200/70 dark:bg-slate-800/80">
+      <div className="penny-page-tabs bg-slate-200/70 dark:bg-slate-800/80">
         {(['active', 'paused', 'stopped', 'all'] as const).map((s) => (
           <button
             key={s}
@@ -267,7 +267,7 @@ export function RecurringPage() {
               setStateFilter(s);
               setPage(1);
             }}
-            className={`min-h-[36px] px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`min-h-[36px] px-1.5 sm:px-2 lg:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors leading-tight ${
               stateFilter === s
                 ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400'
@@ -283,25 +283,14 @@ export function RecurringPage() {
       {loading ? (
         <LoadingRows rows={4} />
       ) : !data || data.results.length === 0 ? (
-        <EmptyState
-          title={t.common.noData}
-          action={
-            <button
-              type="button"
-              onClick={() => openPlanModal(null)}
-              className="min-h-[40px] px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium"
-            >
-              {t.recurring.newPlan}
-            </button>
-          }
-        />
+        <EmptyState title={t.common.noData} />
       ) : (
         <div className="space-y-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
             {data.results.map((plan) => (
               <div
                 key={plan.id}
-                className="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center gap-x-4 gap-y-3"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -328,7 +317,7 @@ export function RecurringPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3 shrink-0">
+                <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3 lg:col-start-2 lg:row-start-1">
                   <CurrencyAmount
                     amount={plan.amount}
                     currency={plan.currency}
@@ -337,16 +326,6 @@ export function RecurringPage() {
                   />
 
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {plan.state === 'active' && (
-                      <button
-                        type="button"
-                        onClick={() => openPendingModal(plan)}
-                        className="min-h-[38px] px-3 py-1.5 inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium whitespace-nowrap"
-                      >
-                        <CalendarCheck2 className="w-3.5 h-3.5" />
-                        <span>{t.recurring.viewPending}</span>
-                      </button>
-                    )}
                     {plan.state !== 'stopped' && (
                       <button
                         type="button"
@@ -404,6 +383,16 @@ export function RecurringPage() {
                     )}
                   </div>
                 </div>
+                {plan.state === 'active' && (
+                  <button
+                    type="button"
+                    onClick={() => openPendingModal(plan)}
+                    className="w-full sm:w-fit min-h-[40px] sm:min-h-0 px-3 sm:px-0 py-2 sm:py-0 inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg sm:rounded-none bg-emerald-700 sm:bg-transparent text-white sm:text-emerald-700 dark:sm:text-emerald-400 hover:bg-emerald-800 sm:hover:bg-transparent sm:hover:underline text-xs font-medium lg:col-start-1 lg:row-start-2"
+                  >
+                    <CalendarCheck2 className="w-3.5 h-3.5" />
+                    <span>{t.recurring.viewPending}</span>
+                  </button>
+                )}
               </div>
             ))}
           </div>

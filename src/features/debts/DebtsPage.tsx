@@ -162,7 +162,7 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
       {/* Tabs */}
       <div
         role="tablist"
-        className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-200/70 dark:bg-slate-800/80"
+        className="penny-page-tabs bg-slate-200/70 dark:bg-slate-800/80"
       >
         <button
           type="button"
@@ -289,18 +289,7 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
         <LoadingRows rows={4} />
       ) : tab === 'debts' ? (
         !debtsRes || debtsRes.results.length === 0 ? (
-          <EmptyState
-            title={t.common.noData}
-            action={
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="min-h-[40px] px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium"
-              >
-                {t.debts.newDebt}
-              </button>
-            }
-          />
+          <EmptyState title={t.common.noData} />
         ) : (
           <div className="space-y-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">

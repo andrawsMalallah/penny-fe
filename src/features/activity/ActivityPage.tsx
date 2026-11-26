@@ -312,18 +312,7 @@ export function ActivityPage({
               >
                 {t.common.resetFilters}
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingTx(null);
-                  setModalOpen(true);
-                }}
-                className="min-h-[40px] px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium"
-              >
-                {t.activity.newTransaction}
-              </button>
-            )
+            ) : undefined
           }
         />
       ) : (

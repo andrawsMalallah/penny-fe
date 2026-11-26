@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, LogOut, RefreshCw, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Check, Copy, LogOut, RefreshCw, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react';
 import { clearCsrfToken, refreshCsrfToken } from '../../api/client';
 import { accountsApi, authApi, settingsApi } from '../../api/endpoints';
 import type {
@@ -34,7 +34,7 @@ function safeQrSrc(raw: string): string | null {
 export function SettingsPage() {
   const { t, language, setLanguage, format } = useI18n();
   const { appearance, setAppearance } = useTheme();
-  const { user, settings, setSettings, refreshSession } = useAuth();
+  const { user, settings, setSettings, refreshSession, setAuthenticatedUser } = useAuth();
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [defaultAccount, setDefaultAccount] = useState<string>('');
@@ -71,6 +71,11 @@ export function SettingsPage() {
   // Sign out everywhere confirm
   const [logoutAllOpen, setLogoutAllOpen] = useState(false);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
+  const [deletionOpen, setDeletionOpen] = useState(false);
+  const [deletionCode, setDeletionCode] = useState('');
+  const [deletionConfirmed, setDeletionConfirmed] = useState(false);
+  const [deletionBusy, setDeletionBusy] = useState(false);
+  const [deletionError, setDeletionError] = useState<unknown>(null);
 
   const loadSettingsData = useCallback(async () => {
     setSessionsLoading(true);
@@ -226,6 +231,39 @@ export function SettingsPage() {
     }
   };
 
+  const requestAccountDeletion = async () => {
+    setDeletionError(null);
+    setDeletionBusy(true);
+    try {
+      await authApi.requestAccountDeletion();
+      setDeletionCode('');
+      setDeletionConfirmed(false);
+      setDeletionOpen(true);
+    } catch (error) {
+      setDeletionError(error);
+    } finally {
+      setDeletionBusy(false);
+    }
+  };
+
+  const confirmAccountDeletion = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!deletionConfirmed || !/^\d{6}$/.test(deletionCode)) return;
+    setDeletionError(null);
+    setDeletionBusy(true);
+    try {
+      await authApi.confirmAccountDeletion(deletionCode);
+      clearCsrfToken();
+      setDeletionOpen(false);
+      setDeletionCode('');
+      setAuthenticatedUser(null);
+    } catch (error) {
+      setDeletionError(error);
+    } finally {
+      setDeletionBusy(false);
+    }
+  };
+
   const qrImageSrc = setupPayload?.qr_code ? safeQrSrc(setupPayload.qr_code) : null;
 
   return (
@@ -349,8 +387,9 @@ export function SettingsPage() {
           </form>
         </section>
 
-        {/* Two-Factor Authentication */}
-        <section className="lg:col-span-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
+        <div className="lg:col-span-6 flex flex-col gap-6">
+          {/* Two-Factor Authentication */}
+          <section className="lg:flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold">{t.settings.twoFactorTitle}</h2>
@@ -378,6 +417,11 @@ export function SettingsPage() {
               )}
             </div>
           </div>
+
+          <ul className="list-disc space-y-1.5 ps-5 text-sm text-slate-600 dark:text-slate-400">
+            <li>{t.settings.twoFactorSignInHint}</li>
+            <li>{t.settings.twoFactorRecoveryHint}</li>
+          </ul>
 
           {twoFaStatus && !twoFaStatus.enabled && (
             <button
@@ -425,7 +469,32 @@ export function SettingsPage() {
               </button>
             </div>
           )}
-        </section>
+          </section>
+          <section className="lg:flex-1 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/60 rounded-xl p-5 space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-red-700 dark:text-red-400">
+                {t.settings.deleteAccountTitle}
+              </h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                {t.settings.deleteAccountDescription}
+              </p>
+            </div>
+            <ul className="list-disc space-y-1.5 ps-5 text-sm text-slate-600 dark:text-slate-400">
+              <li>{t.settings.deletionDataHint}</li>
+              <li>{t.settings.deletionIrreversibleHint}</li>
+            </ul>
+            <ErrorAlert error={deletionOpen ? null : deletionError} />
+            <button
+              type="button"
+              disabled={deletionBusy}
+              onClick={() => void requestAccountDeletion()}
+              className="min-h-[44px] px-4 py-2 inline-flex items-center gap-2 rounded-lg border border-red-300 dark:border-red-900 text-red-700 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              {deletionBusy && !deletionOpen ? t.common.loading : t.settings.requestDeletionCode}
+            </button>
+          </section>
+        </div>
       </div>
 
       {/* Active Sessions */}
@@ -488,6 +557,63 @@ export function SettingsPage() {
           <p className="text-sm text-slate-500">{t.common.noData}</p>
         )}
       </section>
+
+      <Modal
+        open={deletionOpen}
+        onClose={deletionBusy ? () => {} : () => { setDeletionOpen(false); setDeletionCode(''); setDeletionError(null); }}
+        title={t.settings.deleteAccountTitle}
+        size="sm"
+      >
+        <form onSubmit={confirmAccountDeletion} className="space-y-4">
+          <p className="text-sm text-slate-700 dark:text-slate-300">{t.settings.deletionCodeSent}</p>
+          <ErrorAlert error={deletionError} />
+          <div>
+            <label htmlFor="account-deletion-code" className="block text-sm font-medium mb-1.5">
+              {t.settings.deletionEmailCode}
+            </label>
+            <input
+              id="account-deletion-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              dir="ltr"
+              value={deletionCode}
+              onChange={(event) => setDeletionCode(event.target.value)}
+              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-base tracking-widest"
+            />
+          </div>
+          <label className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300">
+            <input
+              type="checkbox"
+              required
+              checked={deletionConfirmed}
+              onChange={(event) => setDeletionConfirmed(event.target.checked)}
+              className="mt-1 h-4 w-4 accent-red-600"
+            />
+            <span>{t.settings.deletionFinalConfirmation}</span>
+          </label>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              disabled={deletionBusy}
+              onClick={() => { setDeletionOpen(false); setDeletionCode(''); setDeletionError(null); }}
+              className="min-h-[44px] px-4 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={deletionBusy || !deletionConfirmed || !/^\d{6}$/.test(deletionCode)}
+              className="min-h-[44px] px-4 py-2 text-sm font-medium rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+            >
+              {deletionBusy ? t.common.loading : t.settings.confirmDeleteAccount}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* 2FA Setup Modal */}
       <Modal

@@ -267,7 +267,7 @@ export function AnalyticsPage({
       {/* Mode tabs */}
       <div
         role="tablist"
-        className="inline-flex items-center gap-1 p-1 rounded-lg bg-slate-200/70 dark:bg-slate-800/80"
+        className="penny-page-tabs bg-slate-200/70 dark:bg-slate-800/80"
       >
         <button
           type="button"
@@ -307,7 +307,7 @@ export function AnalyticsPage({
         <div className="space-y-6">
           {/* Period Filter */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-wrap items-end gap-3">
-            <div className="w-full min-w-0 sm:w-auto sm:min-w-60">
+            <div className="w-full min-w-0 lg:w-auto lg:min-w-60">
               <label htmlFor="an-period" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 {t.analytics.period}
               </label>
@@ -329,7 +329,7 @@ export function AnalyticsPage({
 
             {period === 'custom' && (
               <>
-                <div>
+                <div className="w-full min-w-0 lg:w-auto">
                   <label htmlFor="an-start" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                     {t.activity.startDate}
                   </label>
@@ -339,10 +339,10 @@ export function AnalyticsPage({
                     dir="ltr"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-sm"
+                    className="w-full min-w-0 lg:w-auto min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-sm"
                   />
                 </div>
-                <div>
+                <div className="w-full min-w-0 lg:w-auto">
                   <label htmlFor="an-end" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                     {t.activity.endDate}
                   </label>
@@ -352,7 +352,7 @@ export function AnalyticsPage({
                     dir="ltr"
                     value={customEnd}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-sm"
+                    className="w-full min-w-0 lg:w-auto min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-sm"
                   />
                 </div>
               </>
@@ -617,7 +617,7 @@ export function AnalyticsPage({
                   setReviewPage(1);
                   onSyncRoute?.('monthly', next);
                 }}
-                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="min-h-[40px] min-w-[40px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <PrevIcon className="w-4 h-4" />
               </button>
@@ -633,7 +633,7 @@ export function AnalyticsPage({
                     onSyncRoute?.('monthly', e.target.value);
                   }
                 }}
-                className="min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-sm"
+                className="min-h-[40px] min-w-0 flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-sm"
               />
               <button
                 type="button"
@@ -644,7 +644,7 @@ export function AnalyticsPage({
                   setReviewPage(1);
                   onSyncRoute?.('monthly', next);
                 }}
-                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="min-h-[40px] min-w-[40px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <NextIcon className="w-4 h-4" />
               </button>

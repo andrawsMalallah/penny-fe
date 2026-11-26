@@ -121,7 +121,7 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
                 setPage(1);
                 onChangeMonth(shiftMonth(activeMonth, -1));
               }}
-              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="min-h-[40px] min-w-[40px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <PrevIcon className="w-4 h-4" />
             </button>
@@ -136,7 +136,7 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
                   onChangeMonth(e.target.value);
                 }
               }}
-              className="min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono-num text-sm"
+              className="min-h-[40px] min-w-0 flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono-num text-sm"
             />
             <button
               type="button"
@@ -145,7 +145,7 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
                 setPage(1);
                 onChangeMonth(shiftMonth(activeMonth, 1));
               }}
-              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="min-h-[40px] min-w-[40px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <NextIcon className="w-4 h-4" />
             </button>

@@ -23,7 +23,7 @@ import { SettingsPage } from './features/settings/SettingsPage';
 import { TransactionModal } from './features/activity/TransactionModal';
 
 function PennyAppContent() {
-  const { loading, user, twoFactorPending } = useAuth();
+  const { loading, user, twoFactorPending, sessionCheckFailed, refreshSession } = useAuth();
   const { t } = useI18n();
 
   const [route, setRoute] = useState<ParsedRoute>(() =>
@@ -68,6 +68,27 @@ function PennyAppContent() {
           <div className="h-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden="true">
             <span className="penny-loading-bar block h-full w-1/3 rounded-full bg-emerald-600 dark:bg-emerald-400" />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionCheckFailed) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 text-slate-900 dark:text-slate-100">
+        <div role="alert" className="w-full max-w-md rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center shadow-sm">
+          <img src="/penny-mark.svg" alt="" className="w-12 h-12 rounded-xl mx-auto" />
+          <h1 className="mt-4 text-xl font-semibold">{t.common.sessionCheckFailedTitle}</h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            {t.common.sessionCheckFailedBody}
+          </p>
+          <button
+            type="button"
+            onClick={() => void refreshSession()}
+            className="mt-5 min-h-[44px] px-5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium"
+          >
+            {t.common.retry}
+          </button>
         </div>
       </div>
     );

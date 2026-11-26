@@ -127,6 +127,7 @@ export async function apiRequest<T>(
     body?: unknown;
     query?: object;
     signal?: AbortSignal;
+    cache?: RequestCache;
   }
 ): Promise<T> {
   const method = options?.method ?? 'GET';
@@ -173,6 +174,7 @@ export async function apiRequest<T>(
       headers,
       body: method === 'POST' && options?.body !== undefined ? JSON.stringify(options.body) : undefined,
       signal: options?.signal,
+      cache: options?.cache,
     });
   } catch {
     throw new ApiError('Unable to reach the Penny backend service.', {
