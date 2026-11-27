@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Download, ExternalLink, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { accountsApi, transactionsApi } from '../../api/endpoints';
 import type {
-  Account,
-  ExpenseCategory,
   PaginatedResponse,
   Transaction,
 } from '../../api/types';
@@ -16,6 +14,7 @@ import { ErrorAlert } from '../../components/ui/ErrorAlert';
 import { CurrencyAmount } from '../../components/ui/CurrencyAmount';
 import { Pagination } from '../../components/ui/Pagination';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { TransactionModal } from './TransactionModal';
 import { ExportCsvModal } from './ExportCsvModal';
 
@@ -33,9 +32,6 @@ export function ActivityPage({
   refreshTrigger = 0,
 }: ActivityPageProps) {
   const { t, language, format, categoryLabel } = useI18n();
-
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [data, setData] = useState<PaginatedResponse<Transaction> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
@@ -47,20 +43,6 @@ export function ActivityPage({
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  useEffect(() => {
-    Promise.all([
-      accountsApi.listAllAccounts('all'),
-      accountsApi.listAllCategories('all'),
-    ])
-      .then(([accs, cats]) => {
-        setAccounts(accs);
-        setCategories(cats);
-      })
-      .catch(() => {
-        // Non-fatal for filter dropdowns
-      });
-  }, []);
 
   const loadTransactions = useCallback(async () => {
     setLoading(true);
@@ -81,7 +63,7 @@ export function ActivityPage({
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters.account, filters.category, filters.kind, filters.currency, filters.start, filters.end, filters.page]);
 
   useEffect(() => {
     void loadTransactions();
@@ -182,19 +164,16 @@ export function ActivityPage({
             <label htmlFor="f-account" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               {t.activity.filterAccount}
             </label>
-            <select
+            <SearchableSelect
               id="f-account"
+              label={t.activity.filterAccount}
               value={filters.account}
-              onChange={(e) => setFilterField('account', e.target.value)}
-              className="w-full min-h-[40px] px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-            >
-              <option value="">{t.common.all}</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} {a.archived ? `(${t.common.archived})` : ''}
-                </option>
-              ))}
-            </select>
+              emptyLabel={t.common.all}
+              onChange={(value) => setFilterField('account', value)}
+              loadPage={(page) => accountsApi.listAccounts({ archived: 'all', page })}
+              getById={accountsApi.getAccount}
+              getLabel={(account) => account.name}
+            />
           </div>
 
           <div>
@@ -222,19 +201,16 @@ export function ActivityPage({
             <label htmlFor="f-category" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
               {t.activity.filterCategory}
             </label>
-            <select
+            <SearchableSelect
               id="f-category"
+              label={t.activity.filterCategory}
               value={filters.category}
-              onChange={(e) => setFilterField('category', e.target.value)}
-              className="w-full min-h-[40px] px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-            >
-              <option value="">{t.common.all}</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {categoryLabel(c)} {c.archived ? `(${t.common.archived})` : ''}
-                </option>
-              ))}
-            </select>
+              emptyLabel={t.common.all}
+              onChange={(value) => setFilterField('category', value)}
+              loadPage={(page) => accountsApi.listCategories({ archived: 'all', page })}
+              getById={accountsApi.getCategory}
+              getLabel={categoryLabel} getSearchText={(category) => `${category.name_en} ${category.name_ar}`}
+            />
           </div>
 
           <div>
@@ -316,13 +292,14 @@ export function ActivityPage({
           }
         />
       ) : (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <div className="penny-content-enter bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           {/* Desktop Ledger Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm text-start border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-900/60">
                   <th className="py-3 px-4 font-medium text-start">{t.common.date}</th>
+                  <th scope="col" className="py-3 px-4 font-medium text-start">#</th>
                   <th className="py-3 px-4 font-medium text-start">{t.activity.kind}</th>
                   <th className="py-3 px-4 font-medium text-start">{t.common.account}</th>
                   <th className="py-3 px-4 font-medium text-start">{t.common.category}</th>
@@ -332,7 +309,7 @@ export function ActivityPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {data.results.map((tx) => {
+                {data.results.map((tx, index) => {
                   const catText = tx.category
                     ? categoryLabel({
                         name_en: tx.category_name_en,
@@ -346,6 +323,7 @@ export function ActivityPage({
                       key={tx.id}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
                     >
+                      <td className="py-3 px-4 tabular-nums text-xs text-slate-500">{(filters.page - 1) * 10 + index + 1}.</td>
                       <td className="py-3 px-4 whitespace-nowrap font-mono-num text-xs text-slate-600 dark:text-slate-400">
                         {formatDisplayDate(tx.date, language)}
                       </td>
@@ -440,7 +418,7 @@ export function ActivityPage({
 
           {/* Mobile List Rows */}
           <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-800">
-            {data.results.map((tx) => {
+            {data.results.map((tx, index) => {
               const catText = tx.category
                 ? categoryLabel({
                     name_en: tx.category_name_en,
@@ -451,6 +429,7 @@ export function ActivityPage({
               const receivedCurrency: CurrencyCode = tx.currency === 'IQD' ? 'USD' : 'IQD';
               return (
                 <div key={tx.id} className="p-4 space-y-2">
+                  <span className="text-xs tabular-nums text-slate-500">{(filters.page - 1) * 10 + index + 1}.</span>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">

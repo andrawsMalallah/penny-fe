@@ -10,14 +10,14 @@ interface PaginationProps {
   onPageChange: (nextPage: number) => void;
 }
 
-export function paginationPageCount(count: number, pageSize = 30): number {
+export function paginationPageCount(count: number, pageSize = 10): number {
   return Math.max(1, Math.ceil(count / Math.max(1, pageSize)));
 }
 
 export function Pagination({
   page,
   count,
-  pageSize = 30,
+  pageSize = 10,
   hasNext,
   hasPrevious,
   onPageChange,

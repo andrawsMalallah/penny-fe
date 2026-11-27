@@ -11,6 +11,7 @@ import { ErrorAlert } from '../../components/ui/ErrorAlert';
 import { CurrencyAmount } from '../../components/ui/CurrencyAmount';
 import { Pagination } from '../../components/ui/Pagination';
 import { Modal } from '../../components/ui/Modal';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 interface DebtDetailPageProps {
@@ -65,7 +66,7 @@ export function DebtDetailPage({ debtId, onBack }: DebtDetailPageProps) {
       const [debtData, repsData, accs] = await Promise.all([
         debtsApi.get(debtId),
         debtsApi.listRepayments(debtId, page),
-        accountsApi.listAllAccounts('false'),
+        accountsApi.listAccounts({ archived: 'false', page: 1 }).then((response) => response.results),
       ]);
       setDebt(debtData);
       setRepaymentsRes(repsData);
@@ -301,12 +302,13 @@ export function DebtDetailPage({ debtId, onBack }: DebtDetailPageProps) {
               <EmptyState title={t.debts.noRepayments} />
             ) : (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
-                {repaymentsRes.results.map((rep) => (
+                {repaymentsRes.results.map((rep, index) => (
                   <div
                     key={rep.id}
                     className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
+                      <span className="text-xs tabular-nums text-slate-500">{(page - 1) * 10 + index + 1}.</span>
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                         {rep.account_name}
                       </p>
@@ -401,20 +403,16 @@ export function DebtDetailPage({ debtId, onBack }: DebtDetailPageProps) {
               <label htmlFor="ed-debt-acc" className="block text-sm font-medium mb-1.5">
                 {t.common.account}
               </label>
-              <select
+              <SearchableSelect
                 id="ed-debt-acc"
+                label={t.common.account}
                 required
                 value={editAccount}
-                onChange={(e) => setEditAccount(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">—</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setEditAccount}
+                loadPage={(page) => accountsApi.listAccounts({ archived: 'false', page })}
+                getById={accountsApi.getAccount}
+                getLabel={(account) => account.name}
+              />
             </div>
           )}
 
@@ -504,20 +502,16 @@ export function DebtDetailPage({ debtId, onBack }: DebtDetailPageProps) {
             <label htmlFor="rep-acc" className="block text-sm font-medium mb-1.5">
               {t.common.account}
             </label>
-            <select
+            <SearchableSelect
               id="rep-acc"
+              label={t.common.account}
               required
               value={repAccount}
-              onChange={(e) => setRepAccount(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-            >
-              <option value="">—</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
+              onChange={setRepAccount}
+              loadPage={(page) => accountsApi.listAccounts({ archived: 'false', page })}
+              getById={accountsApi.getAccount}
+              getLabel={(account) => account.name}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

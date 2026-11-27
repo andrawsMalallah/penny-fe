@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { CalendarCheck2, Pause, Pencil, Play, Plus, Square } from 'lucide-react';
+import { CalendarCheck2, Pause, Pencil, Play, Plus, Square, Trash2 } from 'lucide-react';
 import { ApiError } from '../../api/client';
 import { accountsApi, recurringApi } from '../../api/endpoints';
 import type {
@@ -18,6 +18,7 @@ import { PageHeader, EmptyState, LoadingRows } from '../../components/ui/PageHea
 import { ErrorAlert } from '../../components/ui/ErrorAlert';
 import { CurrencyAmount } from '../../components/ui/CurrencyAmount';
 import { Pagination } from '../../components/ui/Pagination';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { TransactionModal } from '../activity/TransactionModal';
@@ -28,6 +29,11 @@ export function RecurringPage() {
 
   const [stateFilter, setStateFilter] = useState<'active' | 'paused' | 'stopped' | 'all'>('active');
   const [page, setPage] = useState(1);
+  const [frequencyFilter, setFrequencyFilter] = useState<'' | RecurringFrequency>('');
+  const [accountFilter, setAccountFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [kindFilter, setKindFilter] = useState<'' | 'income' | 'expense'>('');
+  const [currencyFilter, setCurrencyFilter] = useState<'' | CurrencyCode>('');
 
   const [data, setData] = useState<PaginatedResponse<RecurringPlan> | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -77,9 +83,11 @@ export function RecurringPage() {
     setError(null);
     try {
       const [plansRes, accs, cats] = await Promise.all([
-        recurringApi.list({ state: stateFilter, page }),
-        accountsApi.listAllAccounts('false'),
-        accountsApi.listAllCategories('false'),
+        recurringApi.list({ state: stateFilter, page, frequency: frequencyFilter || undefined,
+          account: accountFilter || undefined, category: categoryFilter || undefined,
+          kind: kindFilter || undefined, currency: currencyFilter || undefined }),
+        accountsApi.listAccounts({ archived: 'false', page: 1 }).then((response) => response.results),
+        accountsApi.listCategories({ archived: 'false', page: 1 }).then((response) => response.results),
       ]);
       setData(plansRes);
       setAccounts(accs);
@@ -89,7 +97,7 @@ export function RecurringPage() {
     } finally {
       setLoading(false);
     }
-  }, [stateFilter, page]);
+  }, [stateFilter, page, frequencyFilter, accountFilter, categoryFilter, kindFilter, currencyFilter]);
 
   useEffect(() => {
     void loadPlans();
@@ -210,7 +218,9 @@ export function RecurringPage() {
     await loadPlans();
     if (pendingPlan) {
       try {
-        const refreshedList = await recurringApi.list({ state: stateFilter, page });
+        const refreshedList = await recurringApi.list({ state: stateFilter, page, frequency: frequencyFilter || undefined,
+          account: accountFilter || undefined, category: categoryFilter || undefined,
+          kind: kindFilter || undefined, currency: currencyFilter || undefined });
         const updated = refreshedList.results.find((p) => p.id === pendingPlan.id) || pendingPlan;
         setPendingPlan(updated);
         await loadPendingDates(updated);
@@ -227,7 +237,8 @@ export function RecurringPage() {
     try {
       await confirmDialog.action();
       setConfirmDialog(null);
-      await refreshPendingAndPlans();
+      if (data?.results.length === 1 && page > 1) setPage(page - 1);
+      else await refreshPendingAndPlans();
     } catch (err) {
       setConfirmError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -278,6 +289,54 @@ export function RecurringPage() {
         ))}
       </div>
 
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div>
+          <label htmlFor="recurring-frequency-filter" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">{t.recurring.frequency}</label>
+          <select id="recurring-frequency-filter" value={frequencyFilter}
+            onChange={(event) => { setFrequencyFilter(event.target.value as '' | RecurringFrequency); setPage(1); }}
+            className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm">
+            <option value="">{t.common.all}</option>
+            <option value="weekly">{t.recurring.weekly}</option>
+            <option value="monthly">{t.recurring.monthly}</option>
+            <option value="yearly">{t.recurring.yearly}</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="recurring-account-filter" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">{t.common.account}</label>
+          <SearchableSelect id="recurring-account-filter" label={t.common.account} value={accountFilter} emptyLabel={t.common.all}
+            onChange={(value) => { setAccountFilter(value); setPage(1); }}
+            loadPage={(choicePage) => accountsApi.listAccounts({ archived: 'all', page: choicePage })}
+            getById={accountsApi.getAccount} getLabel={(account) => account.name} />
+        </div>
+        <div>
+          <label htmlFor="recurring-category-filter" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">{t.common.category}</label>
+          <SearchableSelect id="recurring-category-filter" label={t.common.category} value={categoryFilter} emptyLabel={t.common.all}
+            onChange={(value) => { setCategoryFilter(value); setPage(1); }}
+            loadPage={(choicePage) => accountsApi.listCategories({ archived: 'all', page: choicePage })}
+            getById={accountsApi.getCategory} getLabel={categoryLabel} getSearchText={(category) => `${category.name_en} ${category.name_ar}`} />
+        </div>
+        <div>
+          <label htmlFor="recurring-kind" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">{t.activity.kind}</label>
+          <select id="recurring-kind" value={kindFilter} onChange={(event) => { setKindFilter(event.target.value as typeof kindFilter); setPage(1); }}
+            className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm">
+            <option value="">{t.common.all}</option><option value="expense">{t.activity.kinds.expense}</option><option value="income">{t.activity.kinds.income}</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="recurring-currency" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">{t.common.currency}</label>
+          <select id="recurring-currency" value={currencyFilter} onChange={(event) => { setCurrencyFilter(event.target.value as typeof currencyFilter); setPage(1); }}
+            className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm">
+            <option value="">{t.common.all}</option><option value="IQD">IQD</option><option value="USD">USD</option>
+          </select>
+        </div>
+        {(frequencyFilter || accountFilter || categoryFilter || kindFilter || currencyFilter) && (
+          <button type="button" onClick={() => { setFrequencyFilter(''); setAccountFilter(''); setCategoryFilter(''); setKindFilter(''); setCurrencyFilter(''); setPage(1); }}
+            className="min-h-[40px] px-3 text-sm font-medium text-emerald-700 dark:text-emerald-400 text-start hover:underline sm:col-span-2 xl:col-span-5">
+            {t.common.resetFilters}
+          </button>
+        )}
+      </section>
+
       <ErrorAlert error={error} onRetry={() => void loadPlans()} />
 
       {loading ? (
@@ -285,14 +344,15 @@ export function RecurringPage() {
       ) : !data || data.results.length === 0 ? (
         <EmptyState title={t.common.noData} />
       ) : (
-        <div className="space-y-4">
+        <div className="penny-content-enter space-y-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
-            {data.results.map((plan) => (
+            {data.results.map((plan, index) => (
               <div
                 key={plan.id}
                 className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center gap-x-4 gap-y-3"
               >
                 <div className="min-w-0 space-y-1">
+                  <span className="text-xs tabular-nums text-slate-500">{(page - 1) * 10 + index + 1}.</span>
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                       {plan.name}
@@ -336,6 +396,16 @@ export function RecurringPage() {
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                     )}
+                    {plan.state === 'stopped' && <button type="button" aria-label={`${t.common.delete} ${plan.name}`} onClick={() => {
+                      setConfirmError(null);
+                      setConfirmDialog({
+                        title: t.recurring.deleteStoppedTitle,
+                        body: t.recurring.deleteStoppedBody,
+                        confirmLabel: t.common.delete,
+                        destructive: true,
+                        action: () => recurringApi.deleteStopped(plan.id, plan.version),
+                      });
+                    }} className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 className="w-3.5 h-3.5" /></button>}
                     {plan.state === 'active' && (
                       <button
                         type="button"
@@ -489,20 +559,16 @@ export function RecurringPage() {
               <label htmlFor="rec-acc" className="block text-sm font-medium mb-1.5">
                 {t.common.account}
               </label>
-              <select
+              <SearchableSelect
                 id="rec-acc"
+                label={t.common.account}
                 required
                 value={accountId}
-                onChange={(e) => setAccountId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">—</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setAccountId}
+                loadPage={(page) => accountsApi.listAccounts({ archived: 'false', page })}
+                getById={accountsApi.getAccount}
+                getLabel={(account) => account.name}
+              />
             </div>
 
             {kind === 'expense' && (
@@ -510,20 +576,16 @@ export function RecurringPage() {
                 <label htmlFor="rec-cat" className="block text-sm font-medium mb-1.5">
                   {t.common.category}
                 </label>
-                <select
+                <SearchableSelect
                   id="rec-cat"
+                  label={t.common.category}
                   required
                   value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-                >
-                  <option value="">—</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {categoryLabel(c)}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setCategoryId}
+                  loadPage={(page) => accountsApi.listCategories({ archived: 'false', page })}
+                  getById={accountsApi.getCategory}
+                  getLabel={categoryLabel} getSearchText={(category) => `${category.name_en} ${category.name_ar}`}
+                />
               </div>
             )}
           </div>
@@ -655,11 +717,9 @@ export function RecurringPage() {
           </p>
         ) : (
           <div className="divide-y divide-slate-200 dark:divide-slate-800">
-            {pendingDates.map((d) => (
+            {pendingDates.map((d, index) => (
               <div key={d} className="py-3 flex flex-wrap items-center justify-between gap-3">
-                <span className="font-mono-num text-sm font-medium">
-                  {formatDisplayDate(d, language)}
-                </span>
+                <span className="font-mono-num text-sm font-medium"><span className="me-2 text-xs text-slate-500">{index + 1}.</span>{formatDisplayDate(d, language)}</span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"

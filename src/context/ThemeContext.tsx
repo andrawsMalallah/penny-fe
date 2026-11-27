@@ -44,12 +44,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const colorScheme = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
     if (resolvedTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-    if (themeColor) themeColor.content = resolvedTheme === 'dark' ? '#020617' : '#f8fafc';
+    if (themeColor) themeColor.content = resolvedTheme === 'dark' ? '#0f172a' : '#ffffff';
+    if (colorScheme) colorScheme.content = resolvedTheme;
   }, [resolvedTheme]);
 
   const setAppearance = useCallback((pref: AppearancePreference) => {

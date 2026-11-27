@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Pencil, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
 import { accountsApi, budgetsApi } from '../../api/endpoints';
 import type { BudgetRow, ExpenseCategory, PaginatedResponse } from '../../api/types';
 import { useI18n } from '../../i18n/useI18n';
@@ -9,7 +9,9 @@ import { PageHeader, EmptyState, LoadingRows } from '../../components/ui/PageHea
 import { ErrorAlert } from '../../components/ui/ErrorAlert';
 import { CurrencyAmount } from '../../components/ui/CurrencyAmount';
 import { Pagination } from '../../components/ui/Pagination';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
 interface BudgetsPageProps {
   month?: string;
@@ -20,10 +22,12 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
   const { t, language, dir, categoryLabel } = useI18n();
   const activeMonth = month || currentMonthYM();
   const [page, setPage] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   const [data, setData] = useState<PaginatedResponse<BudgetRow> | null>(null);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [categoryId, setCategoryId] = useState('');
+  const [newBudgetOpen, setNewBudgetOpen] = useState(false);
   const [openingBudget, setOpeningBudget] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
@@ -35,26 +39,30 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
   const [scope, setScope] = useState<'month' | 'future'>('month');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<unknown>(null);
+  const [deleteRow, setDeleteRow] = useState<BudgetRow | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadBudgets = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await budgetsApi.list(activeMonth, page);
+      const res = await budgetsApi.list(activeMonth, page, categoryFilter);
       setData(res);
     } catch (err) {
       setError(err);
     } finally {
       setLoading(false);
     }
-  }, [activeMonth, page]);
+  }, [activeMonth, page, categoryFilter]);
 
   useEffect(() => {
     void loadBudgets();
   }, [loadBudgets]);
 
   useEffect(() => {
-    accountsApi.listAllCategories('false').then((rows) => {
+    accountsApi.listCategories({ archived: 'false', page: 1 }).then((response) => {
+      const rows = response.results;
       setCategories(rows);
       setCategoryId((current) => current || (rows[0] ? String(rows[0].id) : ''));
     }).catch(setError);
@@ -70,6 +78,7 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
 
   const openCategoryBudget = async () => {
     if (!categoryId) return;
+    setNewBudgetOpen(false);
     setOpeningBudget(true);
     setError(null);
     try {
@@ -104,6 +113,22 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
     }
   };
 
+  const handleDeleteBudget = async () => {
+    if (!deleteRow) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      await budgetsApi.deleteCategoryBudget(deleteRow.category_id, activeMonth, deleteRow.version);
+      setDeleteRow(null);
+      if (data?.results.length === 1 && page > 1) setPage(page - 1);
+      else await loadBudgets();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
   const PrevIcon = dir === 'rtl' ? ChevronRight : ChevronLeft;
   const NextIcon = dir === 'rtl' ? ChevronLeft : ChevronRight;
 
@@ -113,43 +138,12 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
         title={t.budgets.title}
         subtitle={t.budgets.subtitle}
         actions={
-          <div className="flex items-center justify-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              aria-label={t.budgets.previousMonth}
-              onClick={() => {
-                setPage(1);
-                onChangeMonth(shiftMonth(activeMonth, -1));
-              }}
-              className="min-h-[40px] min-w-[40px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <PrevIcon className="w-4 h-4" />
-            </button>
-            <input
-              type="month"
-              aria-label={t.budgets.month}
-              dir="ltr"
-              value={activeMonth}
-              onChange={(e) => {
-                if (e.target.value) {
-                  setPage(1);
-                  onChangeMonth(e.target.value);
-                }
-              }}
-              className="min-h-[40px] min-w-0 flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono-num text-sm"
-            />
-            <button
-              type="button"
-              aria-label={t.budgets.nextMonth}
-              onClick={() => {
-                setPage(1);
-                onChangeMonth(shiftMonth(activeMonth, 1));
-              }}
-              className="min-h-[40px] min-w-[40px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800"
-            >
-              <NextIcon className="w-4 h-4" />
-            </button>
-          </div>
+          <button type="button" disabled={categories.length === 0 || openingBudget}
+            onClick={() => { setCategoryId((current) => current || String(categories[0].id)); setNewBudgetOpen(true); }}
+            className="w-full sm:w-auto min-h-[44px] px-4 py-2 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium disabled:opacity-50">
+            <Plus className="w-4 h-4" />
+            {t.budgets.newBudget}
+          </button>
         }
       />
 
@@ -157,34 +151,33 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
         {formatMonthLabel(activeMonth, language)}
       </p>
 
-      {categories.length > 0 && (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-0 flex-1 sm:flex-none sm:min-w-52">
-            <label htmlFor="budget-category" className="block text-sm font-medium mb-1.5">
-              {t.budgets.chooseCategory}
-            </label>
-            <select
-              id="budget-category"
-              value={categoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm"
-            >
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>{categoryLabel(category)}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="button"
-            disabled={openingBudget || !categoryId}
-            onClick={() => void openCategoryBudget()}
-            className="min-h-[44px] px-4 py-2 inline-flex items-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium disabled:opacity-50"
-          >
-            <Plus className="w-4 h-4" />
-            {openingBudget ? t.common.loading : t.budgets.setBudget}
-          </button>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div className="min-w-0">
+          <label htmlFor="budget-list-category" className="block text-sm font-medium mb-2">{t.common.category}</label>
+          <SearchableSelect id="budget-list-category" label={t.common.category} value={categoryFilter} emptyLabel={t.common.all}
+            onChange={(value) => { setCategoryFilter(value); setPage(1); }}
+            loadPage={(choicePage) => accountsApi.listCategories({ archived: 'all', page: choicePage })}
+            getById={accountsApi.getCategory} getLabel={categoryLabel} getSearchText={(category) => `${category.name_en} ${category.name_ar}`} />
         </div>
-      )}
+        <div className="min-w-0">
+          <label htmlFor="budget-month" className="block text-sm font-medium mb-2">{t.budgets.month}</label>
+          <div className="flex items-center gap-2">
+            <button type="button" aria-label={t.budgets.previousMonth}
+              onClick={() => { setPage(1); onChangeMonth(shiftMonth(activeMonth, -1)); }}
+              className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <PrevIcon className="w-4 h-4" />
+            </button>
+            <input id="budget-month" type="month" dir="ltr" value={activeMonth}
+              onChange={(event) => { if (event.target.value) { setPage(1); onChangeMonth(event.target.value); } }}
+              className="min-h-[44px] min-w-0 flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono-num text-sm" />
+            <button type="button" aria-label={t.budgets.nextMonth}
+              onClick={() => { setPage(1); onChangeMonth(shiftMonth(activeMonth, 1)); }}
+              className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <NextIcon className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
 
       <ErrorAlert error={error} onRetry={() => void loadBudgets()} />
 
@@ -193,15 +186,16 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
       ) : !data || data.results.length === 0 ? (
         <EmptyState title={t.common.noData} />
       ) : (
-        <div className="space-y-4">
+        <div className="penny-content-enter space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.results.map((row) => (
+            {data.results.map((row, index) => (
               <div
                 key={row.category_id}
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
+                    <span className="text-xs tabular-nums text-slate-500">{(page - 1) * 10 + index + 1}.</span>
                     <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                       {categoryLabel(row)}
                     </h3>
@@ -211,15 +205,18 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
                       </p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    aria-label={`${t.budgets.editBudget} ${categoryLabel(row)}`}
-                    onClick={() => openEditModal(row)}
-                    className="min-h-[38px] px-3 py-1.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    <span>{t.common.edit}</span>
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label={`${t.budgets.editBudget} ${categoryLabel(row)}`}
+                      onClick={() => openEditModal(row)}
+                      className="min-h-[38px] px-3 py-1.5 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>{t.common.edit}</span>
+                    </button>
+                    <button type="button" aria-label={`${t.common.delete} ${categoryLabel(row)}`} onClick={() => { setDeleteError(null); setDeleteRow(row); }} className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
                 </div>
 
                 <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
@@ -303,6 +300,30 @@ export function BudgetsPage({ month, onChangeMonth }: BudgetsPageProps) {
           />
         </div>
       )}
+
+      <ConfirmDialog open={Boolean(deleteRow)} onClose={() => setDeleteRow(null)} onConfirm={handleDeleteBudget} title={t.budgets.deleteTitle} body={t.budgets.deleteBody} confirmLabel={t.common.delete} destructive busy={deleteBusy} error={deleteError} />
+
+      <Modal open={newBudgetOpen} onClose={() => setNewBudgetOpen(false)}
+        title={t.budgets.setBudget} subtitle={formatMonthLabel(activeMonth, language)}
+        footer={
+          <>
+            <button type="button" onClick={() => setNewBudgetOpen(false)}
+              className="min-h-[44px] px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-medium">{t.common.cancel}</button>
+            <button type="button" disabled={!categoryId || openingBudget} onClick={() => void openCategoryBudget()}
+              className="min-h-[44px] px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-medium disabled:opacity-50">
+              {openingBudget ? t.common.loading : t.common.next}
+            </button>
+          </>
+        }>
+        <div>
+          <label htmlFor="budget-category" className="block text-sm font-medium mb-1.5">{t.budgets.chooseCategory}</label>
+          <SearchableSelect id="budget-category" label={t.budgets.chooseCategory} required
+            value={categoryId} onChange={setCategoryId}
+            loadPage={(choicePage) => accountsApi.listCategories({ archived: 'false', page: choicePage })}
+            getById={accountsApi.getCategory} getLabel={categoryLabel}
+            getSearchText={(category) => `${category.name_en} ${category.name_ar}`} />
+        </div>
+      </Modal>
 
       <Modal
         open={Boolean(editingRow)}

@@ -221,18 +221,3 @@ export async function generateRequestId(): Promise<string> {
   const res = await apiRequest<{ request_id: string }>('/api/v1/transactions/request-id/');
   return res.request_id;
 }
-
-export async function fetchAllPaginated<T>(
-  fetchPage: (page: number) => Promise<{ next: string | null; results: T[] }>,
-  maxPages = 25
-): Promise<T[]> {
-  const collected: T[] = [];
-  let page = 1;
-  while (page <= maxPages) {
-    const res = await fetchPage(page);
-    collected.push(...res.results);
-    if (!res.next) break;
-    page += 1;
-  }
-  return collected;
-}

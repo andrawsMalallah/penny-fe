@@ -1,4 +1,4 @@
-import { apiRequest, fetchAllPaginated, generateRequestId } from './client';
+import { apiRequest, generateRequestId } from './client';
 import {
   adaptAccountBreakdownPage,
   adaptAnalytics,
@@ -127,12 +127,11 @@ export const settingsApi = {
 };
 
 export const accountsApi = {
-  listGroups: (params?: { archived?: 'false' | 'true' | 'all'; page?: number }) =>
+  listGroups: (params?: { archived?: 'false' | 'true' | 'all'; page?: number; search?: string }) =>
     apiRequest<PaginatedResponse<AccountGroup>>('/api/v1/account-groups/', {
       query: params,
     }),
-  listAllGroups: (archived: 'false' | 'true' | 'all' = 'false') =>
-    fetchAllPaginated((page) => accountsApi.listGroups({ archived, page })),
+  getGroup: (id: number) => apiRequest<AccountGroup>(`/api/v1/account-groups/${id}/`),
   createGroup: (name: string) =>
     apiRequest<AccountGroup>('/api/v1/account-groups/', { method: 'POST', body: { name } }),
   updateGroup: (id: number, name: string) =>
@@ -143,10 +142,9 @@ export const accountsApi = {
       body: { archived },
     }),
 
-  listAccounts: (params?: { archived?: 'false' | 'true' | 'all'; group?: number; page?: number }) =>
+  listAccounts: (params?: { archived?: 'false' | 'true' | 'all'; group?: number | 'none'; page?: number; search?: string }) =>
     apiRequest<PaginatedResponse<Account>>('/api/v1/accounts/', { query: params }),
-  listAllAccounts: (archived: 'false' | 'true' | 'all' = 'false') =>
-    fetchAllPaginated((page) => accountsApi.listAccounts({ archived, page })),
+  getAccount: (id: number) => apiRequest<Account>(`/api/v1/accounts/${id}/`),
   createAccount: (payload: {
     name: string;
     group: number | null;
@@ -171,18 +169,18 @@ export const accountsApi = {
       method: 'POST',
       body: { archived },
     }),
+  deleteAccount: (id: number) => apiRequest<void>(`/api/v1/accounts/${id}/delete/`, { method: 'POST' }),
 
   initializeCategories: () =>
     apiRequest<void>(
       '/api/v1/expense-categories/initialize/',
       { method: 'POST' }
     ),
-  listCategories: (params?: { archived?: 'false' | 'true' | 'all'; page?: number }) =>
+  listCategories: (params?: { archived?: 'false' | 'true' | 'all'; page?: number; search?: string }) =>
     apiRequest<PaginatedResponse<ExpenseCategory>>('/api/v1/expense-categories/', {
       query: params,
     }),
-  listAllCategories: (archived: 'false' | 'true' | 'all' = 'false') =>
-    fetchAllPaginated((page) => accountsApi.listCategories({ archived, page })),
+  getCategory: (id: number) => apiRequest<ExpenseCategory>(`/api/v1/expense-categories/${id}/`),
   createCategory: (payload: { name_en: string; name_ar: string }) =>
     apiRequest<ExpenseCategory>('/api/v1/expense-categories/', {
       method: 'POST',
@@ -199,10 +197,9 @@ export const accountsApi = {
       body: { archived },
     }),
 
-  listDebtPeople: (params?: { page?: number; archived?: 'false' | 'true' | 'all' }) =>
+  listDebtPeople: (params?: { page?: number; archived?: 'false' | 'true' | 'all'; search?: string }) =>
     apiRequest<PaginatedResponse<DebtPerson>>('/api/v1/debt-people/', { query: params }),
-  listAllDebtPeople: (archived: 'false' | 'true' | 'all' = 'false') =>
-    fetchAllPaginated((page) => accountsApi.listDebtPeople({ page, archived })),
+  getDebtPerson: (id: number) => apiRequest<DebtPerson>(`/api/v1/debt-people/${id}/`),
 };
 
 export interface TransactionInputPayload {
@@ -222,6 +219,8 @@ export interface TransactionInputPayload {
 export interface TransactionFilterQuery {
   account?: string | number;
   category?: string | number;
+  account_search?: string;
+  category_search?: string;
   kind?: string;
   currency?: '' | CurrencyCode;
   start?: string;
@@ -254,6 +253,8 @@ export const transactionsApi = {
       query: {
         account: query?.account,
         category: query?.category,
+        account_search: query?.account_search,
+        category_search: query?.category_search,
         kind: query?.kind,
         currency: query?.currency,
         start: query?.start,
@@ -268,6 +269,8 @@ export const transactionsApi = {
     const params = new URLSearchParams();
     if (query.account) params.set('account', String(query.account));
     if (query.category) params.set('category', String(query.category));
+    if (query.account_search) params.set('account_search', query.account_search);
+    if (query.category_search) params.set('category_search', query.category_search);
     if (query.kind) params.set('kind', query.kind);
     if (query.currency) params.set('currency', query.currency);
     if (query.start) params.set('start', query.start);
@@ -302,6 +305,7 @@ export interface RepaymentInputPayload {
 export const debtsApi = {
   list: (query?: {
     person?: string | number;
+    person_search?: string;
     direction?: '' | DebtDirection;
     currency?: '' | CurrencyCode;
     status?: 'open' | 'settled' | 'all';
@@ -351,9 +355,9 @@ export const debtsApi = {
 };
 
 export const budgetsApi = {
-  list: (month: string, page = 1) =>
+  list: (month: string, page = 1, category = '') =>
     apiRequest<PaginatedResponse<BackendBudgetRow>>('/api/v1/budgets/', {
-      query: { month, page },
+      query: { month, page, category: category || undefined },
     }).then(adaptBudgetPage),
   getCategoryBudget: (categoryId: number, month: string) =>
     apiRequest<BackendBudgetRow>(`/api/v1/budgets/${categoryId}/`, { query: { month } }).then(adaptBudgetRow),
@@ -371,6 +375,10 @@ export const budgetsApi = {
       method: 'POST',
       body: payload,
     }).then(adaptBudgetRow),
+  deleteCategoryBudget: (categoryId: number, month: string, version: number) =>
+    apiRequest<void>(`/api/v1/budgets/${categoryId}/delete/`, {
+      method: 'POST', body: { month, version },
+    }),
 };
 
 export interface RecurringInputPayload {
@@ -388,7 +396,7 @@ export interface RecurringInputPayload {
 }
 
 export const recurringApi = {
-  list: (params?: { state?: 'active' | 'paused' | 'stopped' | 'all'; page?: number }) =>
+  list: (params?: { state?: 'active' | 'paused' | 'stopped' | 'all'; page?: number; search?: string; account?: string; category?: string; frequency?: RecurringFrequency; kind?: 'income' | 'expense'; currency?: CurrencyCode }) =>
     apiRequest<PaginatedResponse<RecurringPlan>>('/api/v1/recurring/', { query: params }),
   create: async (payload: RecurringInputPayload) => {
     const request_id = await generateRequestId();
@@ -407,6 +415,8 @@ export const recurringApi = {
       method: 'POST',
       body: payload,
     }),
+  deleteStopped: (id: number, version: number) =>
+    apiRequest<void>(`/api/v1/recurring/${id}/delete/`, { method: 'POST', body: { version } }),
   listPending: (id: number, params: { timezone: string; after?: string }) =>
     apiRequest<{ results: string[]; next_cursor: string | null }>(`/api/v1/recurring/${id}/pending/`, {
       query: params,

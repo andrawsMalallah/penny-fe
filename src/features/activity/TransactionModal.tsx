@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { accountsApi, transactionsApi } from '../../api/endpoints';
 import type {
-  Account,
-  ExpenseCategory,
   Transaction,
   TransactionKind,
 } from '../../api/types';
@@ -12,6 +10,7 @@ import { useI18n } from '../../i18n/useI18n';
 import { getDeviceTimezone, todayYMD } from '../../utils/date';
 import { computeExchangeReceived, type CurrencyCode } from '../../utils/money';
 import { Modal } from '../../components/ui/Modal';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { ErrorAlert } from '../../components/ui/ErrorAlert';
 
 type EditableKind = Exclude<TransactionKind, 'debt_in' | 'debt_out'>;
@@ -62,8 +61,6 @@ export function TransactionModal({
   const { t, categoryLabel } = useI18n();
   const { settings } = useAuth();
 
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loadingLists, setLoadingLists] = useState(false);
 
   const [kind, setKind] = useState<EditableKind>('expense');
@@ -85,13 +82,11 @@ export function TransactionModal({
     setLoadingLists(true);
     setError(null);
     Promise.all([
-      accountsApi.listAllAccounts('false'),
-      accountsApi.listAllCategories('false'),
+      accountsApi.listAccounts({ archived: 'false', page: 1 }).then((response) => response.results),
+      accountsApi.listCategories({ archived: 'false', page: 1 }).then((response) => response.results),
     ])
       .then(([accs, cats]) => {
         if (!active) return;
-        setAccounts(accs);
-        setCategories(cats);
 
         if (editingTransaction) {
           const txKind: EditableKind =
@@ -279,20 +274,19 @@ export function TransactionModal({
             <label htmlFor="tx-account" className="block text-sm font-medium mb-1.5">
               {kind === 'transfer' ? t.activity.sourceAccount : t.common.account}
             </label>
-            <select
+            <SearchableSelect
               id="tx-account"
+              label={t.common.account}
               required
               value={accountId}
-              onChange={(e) => setAccountId(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-            >
-              <option value="">—</option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>
-                  {acc.name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => {
+                setAccountId(value);
+                if (destinationId === value) setDestinationId('');
+              }}
+              loadPage={(page) => accountsApi.listAccounts({ archived: 'false', page })}
+              getById={accountsApi.getAccount}
+              getLabel={(account) => account.name}
+            />
             {fieldErrors.account && (
               <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                 {fieldErrors.account[0]}
@@ -305,22 +299,17 @@ export function TransactionModal({
               <label htmlFor="tx-destination" className="block text-sm font-medium mb-1.5">
                 {t.activity.destinationAccount}
               </label>
-              <select
+              <SearchableSelect
                 id="tx-destination"
+                label={t.activity.destinationAccount}
                 required
                 value={destinationId}
-                onChange={(e) => setDestinationId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">—</option>
-                {accounts
-                  .filter((a) => String(a.id) !== accountId)
-                  .map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      {acc.name}
-                    </option>
-                  ))}
-              </select>
+                onChange={setDestinationId}
+                loadPage={(page) => accountsApi.listAccounts({ archived: 'false', page })}
+                getById={accountsApi.getAccount}
+                getLabel={(account) => account.name}
+                excludedId={Number(accountId)}
+              />
               {fieldErrors.destination && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                   {fieldErrors.destination[0]}
@@ -334,20 +323,16 @@ export function TransactionModal({
               <label htmlFor="tx-category" className="block text-sm font-medium mb-1.5">
                 {t.common.category}
               </label>
-              <select
+              <SearchableSelect
                 id="tx-category"
+                label={t.common.category}
                 required
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">—</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {categoryLabel(cat)}
-                  </option>
-                ))}
-              </select>
+                onChange={setCategoryId}
+                loadPage={(page) => accountsApi.listCategories({ archived: 'false', page })}
+                getById={accountsApi.getCategory}
+                getLabel={categoryLabel} getSearchText={(category) => `${category.name_en} ${category.name_ar}`}
+              />
               {fieldErrors.category && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                   {fieldErrors.category[0]}

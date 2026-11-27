@@ -143,7 +143,7 @@ export function AppShell({
       </aside>
 
       {/* Mobile & Tablet Top App Bar (compact 48px to keep aggregate sticky height <= 15%) */}
-      <header className="lg:hidden sticky top-0 z-30 h-[48px] px-3 sm:px-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+      <header className="lg:hidden sticky top-0 z-30 h-[48px] px-3 sm:px-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"

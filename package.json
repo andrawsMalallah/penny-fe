@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
-    "test": "tsx --test src/api/adapters.test.ts src/components/layout/navigation.test.ts src/components/ui/Pagination.test.ts src/context/sessionStartup.test.ts src/utils/money.test.ts src/utils/date.test.ts src/utils/router.test.ts",
+    "test": "tsx --test src/api/adapters.test.ts src/components/layout/navigation.test.ts src/components/ui/Pagination.test.ts src/components/ui/SearchableSelect.test.ts src/context/sessionStartup.test.ts src/utils/money.test.ts src/utils/date.test.ts src/utils/router.test.ts",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },

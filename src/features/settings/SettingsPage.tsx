@@ -3,7 +3,6 @@ import { Check, Copy, LogOut, RefreshCw, ShieldAlert, ShieldCheck, Trash2 } from
 import { clearCsrfToken, refreshCsrfToken } from '../../api/client';
 import { accountsApi, authApi, settingsApi } from '../../api/endpoints';
 import type {
-  Account,
   LanguageCode,
   PaginatedResponse,
   TwoFactorSetupPayload,
@@ -19,6 +18,7 @@ import type { CurrencyCode } from '../../utils/money';
 import { PageHeader, LoadingRows } from '../../components/ui/PageHeader';
 import { ErrorAlert } from '../../components/ui/ErrorAlert';
 import { Pagination } from '../../components/ui/Pagination';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
@@ -36,7 +36,6 @@ export function SettingsPage() {
   const { appearance, setAppearance } = useTheme();
   const { user, settings, setSettings, refreshSession, setAuthenticatedUser } = useAuth();
 
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [defaultAccount, setDefaultAccount] = useState<string>('');
   const [prefLanguage, setPrefLanguage] = useState<LanguageCode>(language);
   const [defaultCurrency, setDefaultCurrency] = useState<'' | CurrencyCode>('');
@@ -81,13 +80,11 @@ export function SettingsPage() {
     setSessionsLoading(true);
     setSessionsError(null);
     try {
-      const [accs, currentSettings, twoFa, sessions] = await Promise.all([
-        accountsApi.listAllAccounts('false'),
+      const [currentSettings, twoFa, sessions] = await Promise.all([
         settingsApi.get(),
         authApi.getTwoFactorStatus(),
         authApi.listSessions(sessionPage),
       ]);
-      setAccounts(accs);
       setSettings(currentSettings);
       setDefaultAccount(
         currentSettings.default_account ? String(currentSettings.default_account) : ''
@@ -325,19 +322,16 @@ export function SettingsPage() {
               <label htmlFor="set-acc" className="block text-sm font-medium mb-1.5">
                 {t.settings.defaultAccount}
               </label>
-              <select
+              <SearchableSelect
                 id="set-acc"
+                label={t.settings.defaultAccount}
                 value={defaultAccount}
-                onChange={(e) => setDefaultAccount(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">{t.common.none}</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setDefaultAccount}
+                loadPage={(page) => accountsApi.listAccounts({ archived: 'false', page })}
+                getById={accountsApi.getAccount}
+                getLabel={(account) => account.name}
+                emptyLabel={t.common.none}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -529,6 +523,7 @@ export function SettingsPage() {
                   className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
                 >
                   <div>
+                    <span className="text-xs tabular-nums text-slate-500">{(sessionPage - 1) * 10 + idx + 1}.</span>
                     <p className="font-medium text-slate-900 dark:text-slate-100">
                       {s.browser} · {s.device}
                       {s.is_current && (

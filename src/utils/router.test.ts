@@ -22,6 +22,13 @@ test('parseHashRoute parses activity filters and pagination', () => {
   });
 });
 
+test('activity drops legacy name searches and keeps ID links', () => {
+  const oldLink = parseHashRoute('#activity?account_search=Cash&category_search=Food&account=4');
+  assert.equal(oldLink.activity.account, '4');
+  assert.equal(buildHashRoute(oldLink), '#activity?account=4');
+  assert.equal(parseHashRoute('#activity?account=4').activity.account, '4');
+});
+
 test('parseHashRoute parses debt detail ID and budget month', () => {
   const debt = parseHashRoute('#debts/42');
   assert.equal(debt.name, 'debt-detail');

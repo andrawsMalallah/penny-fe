@@ -48,7 +48,7 @@ export function Modal({
     <div
       ref={dialogRef}
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-[2px] p-3 sm:p-4"
+      className="penny-modal-overlay fixed inset-0 z-50 flex items-center justify-center md:items-start bg-slate-950/50 backdrop-blur-[2px] p-3 sm:p-4 md:pt-12 lg:pt-16"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-heading"
@@ -59,7 +59,7 @@ export function Modal({
         onClick={onClose}
       />
       <div
-        className={`penny-dialog relative z-10 w-full ${SIZE_CLASSES[size]} max-h-[calc(100dvh-1.5rem)] sm:max-h-[92dvh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden`}
+        className={`penny-dialog relative z-10 w-full ${SIZE_CLASSES[size]} max-h-[calc(100dvh-1.5rem)] sm:max-h-[92dvh] md:max-h-[calc(100dvh-6rem)] lg:max-h-[calc(100dvh-8rem)] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden`}
       >
         <div className="flex items-start justify-between gap-4 px-4 sm:px-5 py-4 border-b border-slate-200 dark:border-slate-800">
           <div className="min-w-0">

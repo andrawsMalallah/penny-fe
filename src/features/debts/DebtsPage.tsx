@@ -18,6 +18,7 @@ import { PageHeader, EmptyState, LoadingRows } from '../../components/ui/PageHea
 import { ErrorAlert } from '../../components/ui/ErrorAlert';
 import { CurrencyAmount } from '../../components/ui/CurrencyAmount';
 import { Pagination } from '../../components/ui/Pagination';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { Modal } from '../../components/ui/Modal';
 
 interface DebtsPageProps {
@@ -33,6 +34,8 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
   const [currency, setCurrency] = useState<'' | CurrencyCode>('');
   const [status, setStatus] = useState<'open' | 'settled' | 'all'>('open');
   const [personFilter, setPersonFilter] = useState('');
+  const [peopleSearch, setPeopleSearch] = useState('');
+  const [debouncedPeopleSearch, setDebouncedPeopleSearch] = useState('');
   const [page, setPage] = useState(1);
 
   const [debtsRes, setDebtsRes] = useState<PaginatedResponse<Debt> | null>(null);
@@ -57,13 +60,18 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<unknown>(null);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedPeopleSearch(peopleSearch.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [peopleSearch]);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [peopleList, accs] = await Promise.all([
-        accountsApi.listAllDebtPeople('all'),
-        accountsApi.listAllAccounts('false'),
+        accountsApi.listDebtPeople({ archived: 'all', page: 1 }).then((response) => response.results),
+        accountsApi.listAccounts({ archived: 'false', page: 1 }).then((response) => response.results),
       ]);
       setAllPeople(peopleList);
       setAccounts(accs);
@@ -78,7 +86,7 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
         });
         setDebtsRes(res);
       } else {
-        const res = await accountsApi.listDebtPeople({ page });
+        const res = await accountsApi.listDebtPeople({ search: debouncedPeopleSearch || undefined, page });
         setPeopleRes(res);
       }
     } catch (err) {
@@ -86,7 +94,7 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
     } finally {
       setLoading(false);
     }
-  }, [tab, personFilter, direction, currency, status, page]);
+  }, [tab, personFilter, debouncedPeopleSearch, direction, currency, status, page]);
 
   useEffect(() => {
     void loadData();
@@ -262,22 +270,16 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
               <label htmlFor="debt-f-person" className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
                 {t.debts.person}
               </label>
-              <select
+              <SearchableSelect
                 id="debt-f-person"
+                label={t.debts.person}
                 value={personFilter}
-                onChange={(e) => {
-                  setPersonFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full min-h-[40px] px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">{t.common.all}</option>
-                {allPeople.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                emptyLabel={t.common.all}
+                onChange={(value) => { setPersonFilter(value); setPage(1); }}
+                loadPage={(choicePage) => accountsApi.listDebtPeople({ archived: 'all', page: choicePage })}
+                getById={accountsApi.getDebtPerson}
+                getLabel={(person) => person.name}
+              />
             </div>
           </div>
         </section>
@@ -291,14 +293,15 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
         !debtsRes || debtsRes.results.length === 0 ? (
           <EmptyState title={t.common.noData} />
         ) : (
-          <div className="space-y-4">
+          <div className="penny-content-enter space-y-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
-              {debtsRes.results.map((debt) => (
+              {debtsRes.results.map((debt, index) => (
                 <div
                   key={debt.id}
                   className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
                 >
                   <div className="min-w-0 space-y-1">
+                    <span className="text-xs tabular-nums text-slate-500">{(page - 1) * 10 + index + 1}.</span>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-base font-semibold text-slate-900 dark:text-slate-100">
                         {debt.person_name}
@@ -357,16 +360,24 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
         )
       ) : (
         <div className="space-y-4">
+          <div className="max-w-md">
+            <label htmlFor="people-search" className="block text-sm font-medium mb-2">{t.debts.person}</label>
+            <input id="people-search" type="search" maxLength={100} value={peopleSearch}
+              onChange={(event) => { setPeopleSearch(event.target.value); setPage(1); }}
+              placeholder={t.common.search}
+              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm" />
+          </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">
             {t.debts.peopleReadOnlyHint}
           </p>
           {!peopleRes || peopleRes.results.length === 0 ? (
             <EmptyState title={t.common.noData} />
           ) : (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
-              {peopleRes.results.map((person) => (
+            <div className="penny-content-enter bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
+              {peopleRes.results.map((person, index) => (
                 <div key={person.id} className="p-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
+                    <span className="text-xs tabular-nums text-slate-500">{(page - 1) * 10 + index + 1}.</span>
                     <Users className="w-4 h-4 text-slate-400" />
                     <span className="text-sm font-medium">{person.name}</span>
                   </div>
@@ -502,20 +513,16 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
             </div>
 
             {personMode === 'existing' && allPeople.length > 0 ? (
-              <select
-                aria-label={t.debts.existingPerson}
+              <SearchableSelect
+                id="debt-existing-person"
+                label={t.debts.existingPerson}
                 required
                 value={selectedPersonId}
-                onChange={(e) => setSelectedPersonId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">—</option>
-                {allPeople.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedPersonId}
+                loadPage={(page) => accountsApi.listDebtPeople({ archived: 'all', page })}
+                getById={accountsApi.getDebtPerson}
+                getLabel={(person) => person.name}
+              />
             ) : (
               <input
                 aria-label={t.debts.personName}
@@ -554,20 +561,16 @@ export function DebtsPage({ onOpenDebt }: DebtsPageProps) {
               <label htmlFor="debt-account" className="block text-sm font-medium mb-1.5">
                 {t.common.account}
               </label>
-              <select
+              <SearchableSelect
                 id="debt-account"
+                label={t.common.account}
                 required
                 value={newAccountId}
-                onChange={(e) => setNewAccountId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-              >
-                <option value="">—</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setNewAccountId}
+                loadPage={(page) => accountsApi.listAccounts({ archived: 'false', page })}
+                getById={accountsApi.getAccount}
+                getLabel={(account) => account.name}
+              />
               {fieldErrors.account && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                   {fieldErrors.account[0]}

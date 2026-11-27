@@ -36,7 +36,7 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 px-6 py-10 text-center">
+    <div className="penny-content-enter rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 px-6 py-10 text-center">
       <p className="text-base font-medium text-slate-900 dark:text-slate-100">{title}</p>
       {description && (
         <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
@@ -51,7 +51,7 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
 export function LoadingRows({ rows = 4 }: { rows?: number }) {
   const { t } = useI18n();
   return (
-    <div className="space-y-3" role="status" aria-label={t.common.loading} aria-busy="true">
+    <div className="penny-content-enter space-y-3" role="status" aria-label={t.common.loading} aria-busy="true">
       <span className="sr-only">{t.common.loading}</span>
       <div aria-hidden="true" className="space-y-3">
         {Array.from({ length: rows }).map((_, index) => (

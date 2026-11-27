@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Archive, ArchiveRestore, Pencil, Plus, Sparkles, Target } from 'lucide-react';
+import { Archive, ArchiveRestore, Pencil, Plus, Sparkles, Target, Trash2 } from 'lucide-react';
 import { ApiError } from '../../api/client';
 import { accountsApi } from '../../api/endpoints';
 import type {
@@ -15,6 +15,7 @@ import { PageHeader, EmptyState, LoadingRows } from '../../components/ui/PageHea
 import { ErrorAlert } from '../../components/ui/ErrorAlert';
 import { CurrencyAmount } from '../../components/ui/CurrencyAmount';
 import { Pagination } from '../../components/ui/Pagination';
+import { SearchableSelect } from '../../components/ui/SearchableSelect';
 import { Modal } from '../../components/ui/Modal';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 
@@ -27,11 +28,18 @@ export function AccountsPage() {
   const [archivedFilter, setArchivedFilter] = useState<ArchiveFilter>('false');
   const [page, setPage] = useState(1);
   const [selectedGroup, setSelectedGroup] = useState<AccountGroup | null>(null);
+  const [ungroupedOnly, setUngroupedOnly] = useState(false);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   const [accountsRes, setAccountsRes] = useState<PaginatedResponse<Account> | null>(null);
   const [groupsRes, setGroupsRes] = useState<PaginatedResponse<AccountGroup> | null>(null);
   const [categoriesRes, setCategoriesRes] = useState<PaginatedResponse<ExpenseCategory> | null>(null);
-  const [allGroups, setAllGroups] = useState<AccountGroup[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
@@ -79,25 +87,24 @@ export function AccountsPage() {
     setLoading(true);
     setError(null);
     try {
-      const groupsForSelect = await accountsApi.listAllGroups('false');
-      setAllGroups(groupsForSelect);
       if (tab === 'accounts') {
         setAccountsRes(await accountsApi.listAccounts({
           archived: archivedFilter,
-          group: selectedGroup?.id,
+          group: ungroupedOnly ? 'none' : selectedGroup?.id,
+          search: debouncedSearch || undefined,
           page,
         }));
       } else if (tab === 'groups') {
-        setGroupsRes(await accountsApi.listGroups({ archived: archivedFilter, page }));
+        setGroupsRes(await accountsApi.listGroups({ archived: archivedFilter, search: debouncedSearch || undefined, page }));
       } else {
-        setCategoriesRes(await accountsApi.listCategories({ archived: archivedFilter, page }));
+        setCategoriesRes(await accountsApi.listCategories({ archived: archivedFilter, search: debouncedSearch || undefined, page }));
       }
     } catch (err) {
       setError(err);
     } finally {
       setLoading(false);
     }
-  }, [tab, archivedFilter, page, selectedGroup]);
+  }, [tab, archivedFilter, page, selectedGroup, ungroupedOnly, debouncedSearch]);
 
   useEffect(() => {
     void loadData();
@@ -223,7 +230,8 @@ export function AccountsPage() {
     try {
       await confirmState.action();
       setConfirmState(null);
-      await loadData();
+      if (tab === 'accounts' && accountsRes?.results.length === 1 && page > 1) setPage(page - 1);
+      else await loadData();
     } catch (err) {
       setConfirmError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -314,7 +322,8 @@ export function AccountsPage() {
                 setTab(item.key);
                 setPage(1);
                 setNotice(null);
-                if (item.key !== 'accounts') setSelectedGroup(null);
+                setSearch('');
+                if (item.key !== 'accounts') { setSelectedGroup(null); setUngroupedOnly(false); }
               }}
               className={`min-h-[44px] px-1.5 sm:px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                 tab === item.key
@@ -357,17 +366,27 @@ export function AccountsPage() {
         </div>
       </div>
 
+      <div className="max-w-md">
+        <label htmlFor="setup-search" className="block text-sm font-medium mb-2">
+          {tab === 'accounts' ? t.common.account : tab === 'groups' ? t.common.group : t.common.category}
+        </label>
+        <input id="setup-search" type="search" maxLength={100} value={search}
+          onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+          placeholder={t.common.search}
+          className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm" />
+      </div>
+
       <ErrorAlert error={error} onRetry={() => void loadData()} />
 
-      {tab === 'accounts' && selectedGroup && (
+      {tab === 'accounts' && (selectedGroup || ungroupedOnly) && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
           <span>
             {t.accounts.groupName}:{' '}
-            <strong className="text-slate-900 dark:text-slate-100">{selectedGroup.name}</strong>
+            <strong className="text-slate-900 dark:text-slate-100">{ungroupedOnly ? t.analytics.ungrouped : selectedGroup?.name}</strong>
           </span>
           <button
             type="button"
-            onClick={() => { setSelectedGroup(null); setPage(1); }}
+            onClick={() => { setSelectedGroup(null); setUngroupedOnly(false); setPage(1); }}
             className="min-h-[40px] px-2 text-emerald-700 dark:text-emerald-400 font-medium hover:underline"
           >
             {t.common.resetFilters}
@@ -381,9 +400,9 @@ export function AccountsPage() {
         !accountsRes || accountsRes.results.length === 0 ? (
           <EmptyState title={t.common.noData} />
         ) : (
-          <div className="space-y-4">
+          <div className="penny-content-enter space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {accountsRes.results.map((acc) => {
+              {accountsRes.results.map((acc, index) => {
                 const hasIqdTarget = isPositiveDecimal(acc.target_iqd);
                 const hasUsdTarget = isPositiveDecimal(acc.target_usd);
                 const iqdPct = hasIqdTarget
@@ -400,7 +419,9 @@ export function AccountsPage() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex items-start gap-3">
+                        <span className="text-xs tabular-nums text-slate-500 pt-1">{(page - 1) * 10 + index + 1}.</span>
+                        <div className="min-w-0">
                         <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
                           {acc.name}
                         </h3>
@@ -411,6 +432,7 @@ export function AccountsPage() {
                           })}
                           {acc.archived ? ` · ${t.common.archived}` : ''}
                         </p>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
@@ -449,6 +471,16 @@ export function AccountsPage() {
                             <Archive className="w-4 h-4" />
                           )}
                         </button>
+                        {acc.archived && <button type="button" aria-label={`${t.common.delete} ${acc.name}`} onClick={() => {
+                          setConfirmError(null);
+                          setConfirmState({
+                            title: t.accounts.deleteArchivedTitle,
+                            body: t.accounts.deleteArchivedBody,
+                            confirmLabel: t.common.delete,
+                            destructive: true,
+                            action: () => accountsApi.deleteAccount(acc.id),
+                          });
+                        }} className="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 className="w-4 h-4" /></button>}
                       </div>
                     </div>
 
@@ -516,17 +548,28 @@ export function AccountsPage() {
           </div>
         )
       ) : tab === 'groups' ? (
-        !groupsRes || groupsRes.results.length === 0 ? (
-          <EmptyState title={t.common.noData} />
-        ) : (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
-            {groupsRes.results.map((grp) => (
+        groupsRes && (
+          <div className="penny-content-enter bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
+            {archivedFilter !== 'true' && page === 1 &&
+              (!search || t.analytics.ungrouped.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) && (
+              <div className="p-4 flex items-center gap-3">
+                <span className="text-xs tabular-nums text-slate-500">—</span>
+                <button type="button" onClick={() => { setSelectedGroup(null); setUngroupedOnly(true); setArchivedFilter('all'); setTab('accounts'); setPage(1); setSearch(''); }}
+                  className="text-start text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline">
+                  {t.analytics.ungrouped}
+                </button>
+              </div>
+            )}
+            {groupsRes.results.map((grp, index) => (
               <div key={grp.id} className="p-4 flex items-center justify-between gap-3">
-                <div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs tabular-nums text-slate-500">{(page - 1) * 10 + index + 1}.</span>
+                  <div>
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedGroup(grp);
+                      setUngroupedOnly(false);
                       setArchivedFilter('all');
                       setTab('accounts');
                       setPage(1);
@@ -538,6 +581,7 @@ export function AccountsPage() {
                   {grp.archived && (
                     <p className="text-xs text-slate-500 dark:text-slate-400">{t.common.archived}</p>
                   )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -590,10 +634,12 @@ export function AccountsPage() {
       ) : !categoriesRes || categoriesRes.results.length === 0 ? (
         <EmptyState title={t.common.noData} />
       ) : (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
-          {categoriesRes.results.map((cat) => (
+        <div className="penny-content-enter bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-200 dark:divide-slate-800">
+          {categoriesRes.results.map((cat, index) => (
             <div key={cat.id} className="p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
+              <div className="min-w-0 flex items-start gap-3">
+                <span className="text-xs tabular-nums text-slate-500 pt-1">{(page - 1) * 10 + index + 1}.</span>
+                <div>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {categoryLabel(cat)}
                 </p>
@@ -601,6 +647,7 @@ export function AccountsPage() {
                   {[cat.name_en, cat.name_ar].filter(Boolean).join(' · ')}
                   {cat.archived ? ` · ${t.common.archived}` : ''}
                 </p>
+                </div>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
@@ -709,19 +756,16 @@ export function AccountsPage() {
             <label htmlFor="acc-group" className="block text-sm font-medium mb-1.5">
               {t.common.group} <span className="text-xs text-slate-500">({t.common.optional})</span>
             </label>
-            <select
+            <SearchableSelect
               id="acc-group"
+              label={t.common.group}
               value={accGroup}
-              onChange={(e) => setAccGroup(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm"
-            >
-              <option value="">{t.common.none}</option>
-              {allGroups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+              onChange={setAccGroup}
+              loadPage={(page) => accountsApi.listGroups({ archived: 'false', page })}
+              getById={accountsApi.getGroup}
+              getLabel={(group) => group.name}
+              emptyLabel={t.common.none}
+            />
           </div>
 
           {!editingAccount && (

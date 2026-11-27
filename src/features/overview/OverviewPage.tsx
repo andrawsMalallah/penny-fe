@@ -250,7 +250,7 @@ export function OverviewPage({
                 />
               ) : (
                 <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {accounts.slice(0, 5).map((acc) => {
+                  {accounts.slice(0, 5).map((acc, index) => {
                     const hasIqdTarget = isPositiveDecimal(acc.target_iqd);
                     const hasUsdTarget = isPositiveDecimal(acc.target_usd);
                     const iqdPct = hasIqdTarget
@@ -263,6 +263,7 @@ export function OverviewPage({
                       <div key={acc.id} className="py-3 first:pt-0 last:pb-0 space-y-2">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <div>
+                            <span className="text-xs tabular-nums text-slate-500">{index + 1}.</span>
                             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                               {acc.name}
                             </p>
@@ -336,8 +337,9 @@ export function OverviewPage({
                 </p>
               ) : (
                 <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {budgetAlerts.slice(0, 5).map((b) => (
+                  {budgetAlerts.slice(0, 5).map((b, index) => (
                     <div key={b.category_id} className="py-3 first:pt-0 last:pb-0 space-y-1.5">
+                      <span className="text-xs tabular-nums text-slate-500">{index + 1}.</span>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium">{categoryLabel(b)}</span>
                         <span
@@ -393,12 +395,13 @@ export function OverviewPage({
               <p className="text-sm text-slate-500 dark:text-slate-400 py-4">{t.common.noData}</p>
             ) : (
               <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                {recentTx.map((tx) => (
+                {recentTx.map((tx, index) => (
                   <div
                     key={tx.id}
                     className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
+                      <span className="text-xs tabular-nums text-slate-500">{index + 1}.</span>
                       <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                         {t.activity.kinds[tx.kind]}
                         {tx.category

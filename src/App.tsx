@@ -34,9 +34,14 @@ function PennyAppContent() {
 
   useEffect(() => {
     const onHashChange = () => {
-      setRoute(parseHashRoute(window.location.hash));
+      const parsed = parseHashRoute(window.location.hash);
+      if (parsed.name === 'activity' && /[?&](account_search|category_search)=/.test(window.location.hash)) {
+        window.history.replaceState(null, '', buildHashRoute(parsed));
+      }
+      setRoute(parsed);
     };
     window.addEventListener('hashchange', onHashChange);
+    onHashChange();
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
@@ -51,9 +56,11 @@ function PennyAppContent() {
 
   const handleUpdateActivityFilters = useCallback(
     (filters: ActivityFilters) => {
-      navigate({ name: 'activity', activity: filters });
+      const hash = buildHashRoute({ name: 'activity', activity: filters });
+      window.history.replaceState(null, '', hash);
+      setRoute(parseHashRoute(hash));
     },
-    [navigate]
+    []
   );
 
   if (loading) {

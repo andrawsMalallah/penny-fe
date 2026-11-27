@@ -483,9 +483,10 @@ export function AnalyticsPage({
                   ) : (
                     <>
                       <div className="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
-                        {accRows.results.map((r) => (
+                        {accRows.results.map((r, index) => (
                           <div key={r.id} className="py-2.5 flex items-center justify-between gap-3">
                             <div>
+                              <span className="text-xs tabular-nums text-slate-500">{(accPage - 1) * 10 + index + 1}.</span>
                               <p className="font-medium">{r.name}</p>
                               <p className="text-xs text-slate-500">{r.group_name || t.analytics.ungrouped}</p>
                             </div>
@@ -517,7 +518,7 @@ export function AnalyticsPage({
                       <div className="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
                         {grpRows.results.map((r, idx) => (
                           <div key={r.id ?? `ungrouped-${idx}`} className="py-2.5 flex items-center justify-between gap-3">
-                            <span className="font-medium">{r.name || t.analytics.ungrouped}</span>
+                            <span className="font-medium"><span className="me-2 text-xs tabular-nums text-slate-500">{(grpPage - 1) * 10 + idx + 1}.</span>{r.name || t.analytics.ungrouped}</span>
                             <div className="text-end">
                               <div><CurrencyAmount amount={r.balance_iqd} currency="IQD" /></div>
                               <div className="text-xs text-slate-500"><CurrencyAmount amount={r.balance_usd} currency="USD" /></div>
@@ -544,9 +545,9 @@ export function AnalyticsPage({
                   ) : (
                     <>
                       <div className="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
-                        {catRows.results.map((r) => (
+                        {catRows.results.map((r, index) => (
                           <div key={r.category_id} className="py-2.5 flex items-center justify-between gap-3">
-                            <span className="font-medium">{categoryLabel(r)}</span>
+                            <span className="font-medium"><span className="me-2 text-xs tabular-nums text-slate-500">{(catPage - 1) * 10 + index + 1}.</span>{categoryLabel(r)}</span>
                             <div className="text-end">
                               <div><CurrencyAmount amount={r.spent_iqd} currency="IQD" tone="negative" /></div>
                               <div className="text-xs"><CurrencyAmount amount={r.spent_usd} currency="USD" tone="negative" /></div>
@@ -573,9 +574,9 @@ export function AnalyticsPage({
                   ) : (
                     <>
                       <div className="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
-                        {pplRows.results.map((r) => (
+                        {pplRows.results.map((r, index) => (
                           <div key={r.person_id} className="py-2.5 space-y-1">
-                            <p className="font-medium">{r.person_name}</p>
+                            <p className="font-medium"><span className="me-2 text-xs tabular-nums text-slate-500">{(pplPage - 1) * 10 + index + 1}.</span>{r.person_name}</p>
                             <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
                               <div>
                                 {t.debts.owedToMe}: <CurrencyAmount amount={r.owed_to_me_iqd} currency="IQD" tone="positive" /> ·{' '}
@@ -711,9 +712,9 @@ export function AnalyticsPage({
                         <p className="text-sm text-slate-500">{t.common.noData}</p>
                       ) : (
                         <div className="divide-y divide-slate-200 dark:divide-slate-800 text-sm">
-                          {monthly.top_categories[curr].map((c) => (
+                          {monthly.top_categories[curr].map((c, index) => (
                             <div key={c.category_id} className="py-2 flex justify-between gap-2">
-                              <span>{categoryLabel(c)}</span>
+                              <span><span className="me-2 text-xs tabular-nums text-slate-500">{index + 1}.</span>{categoryLabel(c)}</span>
                               <CurrencyAmount amount={c.spent} currency={curr} tone="negative" />
                             </div>
                           ))}
@@ -732,9 +733,9 @@ export function AnalyticsPage({
                 ) : (
                   <>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                      {monthly.budgets.results.map((b) => (
+                      {monthly.budgets.results.map((b, index) => (
                         <div key={b.category_id} className="py-3 space-y-2 text-sm">
-                          <p className="font-medium">{categoryLabel(b)}</p>
+                          <p className="font-medium"><span className="me-2 text-xs tabular-nums text-slate-500">{(reviewPage - 1) * 10 + index + 1}.</span>{categoryLabel(b)}</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                             {(['IQD', 'USD'] as CurrencyCode[]).map((curr) => {
                               const row = b[curr];
